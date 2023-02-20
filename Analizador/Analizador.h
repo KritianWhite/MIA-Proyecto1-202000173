@@ -9,8 +9,11 @@
 
 using namespace std;
 
-// COMANDOS
+// TODO --> Declaracion de funciones para el archivo Analizador.cpp
+int Analizador(char *Comando, bool esScript);
 
+
+// TODO --> COMANDOS
 enum commands {
     execute_command = 1,
     mkdisk_command = 2
