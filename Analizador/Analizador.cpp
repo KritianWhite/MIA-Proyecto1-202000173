@@ -103,9 +103,10 @@ int Analizador(char *Comando, bool esScript){
                         if (mk.acceso){
                             estado = CrearDisco(mk);
                             if(estado){
-                                cout << "Se ha creado el disco." << endl;
+                                cout << "\033[0;92;49m[Correcto]: Se ha creado el disco correctamente. Nombre: "<< mk.diskName 
+                                << ". De tamaño: " << mk.diskSize << ". En la dirección: \"" << mk.diskPath << "\" \033[0m" << endl;
                             }else {
-                                cout << "Ocurrió un error en la creación del disco." << endl;
+                                cout << "\033[0;91;49m[Error]: Ocurrió un error en la creación del disco. \033[0m" << endl;
                             }
                         }
                         incompleto = false;

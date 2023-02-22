@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include "Mkdisk.h"
+#include "../Estructura.h"
 
 using namespace std;
 
@@ -43,6 +44,41 @@ bool CrearDisco(Mkdisk mk){
 
         if (ansUbuntu == 0){
             // TODO --> Creamos el disco y todo.
+            fstream nuevoDisco;
+            string path = "";
+            int factor;
+            cout << "--> Creando el disco..." << endl;
+            path = mk.diskPath;
+            path += mk.diskName;
+            nuevoDisco.open(path, ios::out | ios::binary);
+            if(nuevoDisco.fail()) return false;
+
+            if(mk.sizeUnit == 'K') factor = 1024;
+            else factor = 1024*1024;
+            for (int i = 0; i < (mk.diskSize*factor); i++){
+                nuevoDisco.write((char *)&cero, sizeof(char));
+            }
+            nuevoDisco.close();
+
+            cout << "--> Configurando MBR del disco... " << endl;
+            MBR nuevoMBR;
+            nuevoMBR.mbr_tamano = mk.diskSize * factor;
+            time(&nuevoMBR.mbr_fecha_creacion);
+            nuevoMBR.mbr_dsk_signature = rand() % (100 + 1);
+            nuevoMBR.dsk_fit = mk.diskFit;
+
+            //* Particiones vacias
+            nuevoMBR.mbr_partition_1.part_status = 'E';
+            nuevoMBR.mbr_partition_2.part_status = 'E';
+            nuevoMBR.mbr_partition_3.part_status = 'E';
+            nuevoMBR.mbr_partition_4.part_status = 'E';
+            nuevoDisco.open(path, ios::in | ios::out | ios::binary);
+            if(nuevoDisco.fail()) return false;
+            nuevoDisco.seekp(0);
+            nuevoDisco.write((char *)&idMBR, sizeof(char));
+            nuevoDisco.write((char *)&nuevoMBR, sizeof(MBR));
+            nuevoDisco.close();
+
             return true;
         }
 
@@ -373,5 +409,23 @@ Mkdisk _Mkdisk(char *parametros){
     if (comentario.length() > 0){
         cout << "[Comentario]: " << comentario << endl;
     }
-    
+
+    Mkdisk mk;
+    if (vPath && vSize){
+        if(!vFit || diskFitChar == '\0') diskFitChar = 'F';
+        if (!vUnit || unitSizeChar == '\0') unitSizeChar = 'M';
+
+        mk.diskPath = diskPath;
+        mk.diskName = diskName;
+        mk.diskSize = diskSizeInt;
+        mk.diskFit = diskFitChar;
+        mk.sizeUnit = unitSizeChar;
+        mk.acceso = true;
+        return mk;
+    }
+
+    if(!vPath) cout << "\033[0;91;49m[Error]: La direccion \">path\" es obligatoria para la creación del disco!" << endl;
+    if(!vSize) cout << "\033[0;91;49m[Error]: El tamaño \">size\" es obligatorio para la creación del disco!" << endl;
+    mk.acceso = false;
+    return mk;
 }
