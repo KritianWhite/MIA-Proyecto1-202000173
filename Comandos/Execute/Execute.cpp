@@ -7,7 +7,7 @@
 using namespace std;
 
 Execute _Execute(char *parametros){
-    cout << "en el _Execute " << parametros << endl;
+    //cout << "en el _Execute " << parametros << endl;
     // * Variables para la path
     string path = "";
     //? --> Verificación de que la path sea correcta
