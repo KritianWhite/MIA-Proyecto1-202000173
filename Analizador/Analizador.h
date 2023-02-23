@@ -16,7 +16,8 @@ int Analizador(char *Comando, bool esScript);
 // TODO --> COMANDOS
 enum commands {
     execute_command = 1,
-    mkdisk_command = 2
+    mkdisk_command = 2,
+    rmdisk_command = 3
 };
 
 

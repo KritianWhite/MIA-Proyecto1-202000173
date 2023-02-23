@@ -13,7 +13,7 @@ bool Consola(){
     memset(comando, 0, 250);
     cout << "--> ";
     cin.getline(comando, 250, '\n');
-    if (!cin) throw "ERROR: Desbordamiento en la cantidad de carácteres. \n";
+    if (!cin) throw "\033[0;91;49m[Error]: Ah ocurrido un desbordamiento.\033[0m\n";
     
 
     int estado;
@@ -28,7 +28,7 @@ bool Consola(){
             return false;
         case 2:{
             string enter = "";
-            cout << "Presione ENTER para continuar..";
+            cout << "--> Presione ENTER para continuar..";
             getline(cin, enter);
             cout << "" << endl;
             return true;
@@ -50,7 +50,7 @@ int main()
             cout << messageError << endl;
             break;
         }catch (...){
-            cout << "Me dio ansiedad. Error en el sistema" << endl;
+            cout << "\033[0;91;49m[Error]: Error en el sistema. Me dio ansiedad estado crítico.\033[0m" << endl;
             break;
         }
     }

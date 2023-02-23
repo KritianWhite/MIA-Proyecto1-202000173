@@ -21,12 +21,12 @@ bool CrearDisco(Mkdisk mk){
 
     // * Validación si el archivo no contiene extensión
     if (extension.length() == 0){
-        cout << "Error: " << mk.diskName << " no contiene una extensión." << endl;
+        cout << "\033[0;91;49m[Error]: " << mk.diskName << " no contiene una extensión. \033[0m" << endl;
         return false;
     }
     // * Validación si el archivo contiene una extension distinta a dsk.
     if (extension != "dsk"){
-        cout << "Error: " << mk.diskName << " no es de la extensión dsk." << endl;
+        cout << "\033[0;91;49m[Error]: " << mk.diskName << " no es de la extensión dsk. \033[0m" << endl;
         return false;
     }
 
@@ -197,8 +197,8 @@ Mkdisk _Mkdisk(char *parametros){
                 if (parametros[i] == '\"') {
                     if ((diskPath.size() > 0) && (diskName.size() > 0)) vPath = true;
                     else if((diskPath.size() > 0) && (diskName.size() < 0)){
-                        cout << "Error: " << parametroActual << " no contiene un nombre para el disco." << endl;
-                    } else cout << "Error: " << parametroActual << " no hay una ruta para la creación del disco." << endl;
+                        cout << "\033[0;91;49m[Error]: " << parametroActual << " no contiene un nombre para el disco. \033[0m" << endl;
+                    } else cout << "\033[0;91;49m[Error]: " << parametroActual << " no hay una ruta para la creación del disco. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '/'){diskPath += diskName; diskPath += parametros[i]; diskName = "";}
@@ -212,8 +212,8 @@ Mkdisk _Mkdisk(char *parametros){
                 if (parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
                     if ((diskPath.length() > 0) || (diskName.length() > 0)) vPath = true;
                     else if ((diskPath.length() > 0) || (diskName.length() < 0)){
-                        cout << "Error: " << parametroActual << " no contiene un nombre para el disco." << endl;
-                    } else cout << "Error: " << parametroActual << " no hay una ruta para la creación del disco." << endl;
+                        cout << "\033[0;91;49m[Error]: " << parametroActual << " no contiene un nombre para el disco. \033[0m" << endl;
+                    } else cout << "\033[0;91;49m[Error]: " << parametroActual << " no hay una ruta para la creación del disco. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '/') {diskPath += diskName; diskPath += parametros[i]; diskName = "";}
@@ -275,7 +275,7 @@ Mkdisk _Mkdisk(char *parametros){
                 parametroActual += parametros[i];
                 if(isNumber(parametros[i])) diskSizeStr += parametros[i];
                 else if (parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    if (stoi(diskSizeStr) <= 0) cout << "Error: el valor del parametro size debe ser entero positivo" << endl;
+                    if (stoi(diskSizeStr) <= 0) cout << "\033[0;91;49m[Error]: el valor del parametro size debe ser entero positivo \033[0m" << endl;
                     else{
                         vSize = true;
                         diskSizeInt = stoi(diskSizeStr);
@@ -326,7 +326,7 @@ Mkdisk _Mkdisk(char *parametros){
                     if(strcasecmp(diskFitStr.c_str(), "bf") == 0){ vFit = true; diskFitChar = 'B';}
                     else if (strcasecmp(diskFitStr.c_str(), "wf") == 0){vFit = true; diskFitChar = 'W';}
                     else if (strcasecmp(diskFitStr.c_str(), "ff") == 0){vFit = true; diskFitChar = 'F';}
-                    else cout << "Error: No se reconocio el fit (" << parametroActual << ") del comando mkdisk." << endl;
+                    else cout << "\033[0;91;49m[Error]: No se reconocio el fit (" << parametroActual << ") del comando mkdisk. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
@@ -380,7 +380,7 @@ Mkdisk _Mkdisk(char *parametros){
                 else if (parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
                     if(strcasecmp(unitSizeStr.c_str(), "k") == 0){vUnit = true; unitSizeChar = 'k';}
                     else if (strcasecmp(unitSizeStr.c_str(), "m") == 0){vUnit = true; unitSizeChar = 'm';}
-                    else cout <<  "\033[0;91;49m> Error: No se reconocio la unidad en el parametro " << parametroActual << " del comando mkdisk \033[0m\n";
+                    else cout <<  "\033[0;91;49m[Error]: No se reconocio la unidad en el parametro " << parametroActual << " del comando mkdisk \033[0m\n";
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
@@ -390,7 +390,7 @@ Mkdisk _Mkdisk(char *parametros){
             //! Error de parametros inválidos.
             case -1: {
                 if (parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    cout << "\033[0;91;49m--> [Error]: " << parametroActual << " es inválido para mkdisk. \033[0m" << endl;
+                    cout << "\033[0;91;49m[Error]: El parametro \"" << parametroActual << "\" es inválido para mkdisk. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
                 }
@@ -406,9 +406,7 @@ Mkdisk _Mkdisk(char *parametros){
             }
         }
     }
-    if (comentario.length() > 0){
-        cout << "[Comentario]: " << comentario << endl;
-    }
+    if (comentario.length() > 0) cout << "\033[38;5;246m[comentario] > " << comentario << "\033[0m" << endl;
 
     Mkdisk mk;
     if (vPath && vSize){

@@ -10,6 +10,7 @@
 // Comandos
 #include "./../Comandos/Execute/Execute.cpp"
 #include "./../Comandos/Mkdisk/Mkdisk.cpp"
+#include "./../Comandos/Rmdisk/Rmdisk.cpp"
 
 using namespace std;
 
@@ -40,6 +41,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "pause") == 0) produccion = 3;
             //* Comando mkdisk
             else if (strcasecmp(parte, "mkdisk") == 0){produccion = 2; cmmd = mkdisk_command;}
+            //* Comando rmdisk
+            else if (strcasecmp(parte, "rmdisk") == 0){produccion = 2; cmmd = rmdisk_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario] > " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -104,10 +107,29 @@ int Analizador(char *Comando, bool esScript){
                             estado = CrearDisco(mk);
                             if(estado){
                                 cout << "\033[0;92;49m[Correcto]: Se ha creado el disco correctamente. Nombre: "<< mk.diskName 
-                                << ". De tamaño: " << mk.diskSize << ". En la dirección: \"" << mk.diskPath << "\" \033[0m" << endl;
+                                << ". De tamaño: " << mk.diskSize << ". En la dirección: \"" << mk.diskPath << "\". \033[0m" << endl;
                             }else {
                                 cout << "\033[0;91;49m[Error]: Ocurrió un error en la creación del disco. \033[0m" << endl;
                             }
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case rmdisk_command: {
+                        Rmdisk rm;
+                        rm = _Rmdisk(parte);
+                        if(rm.acceso){
+                            cout << "--> ¿Desea eliminar el disco " << rm.path << " permanentemente? Si (1)/No (2): ";
+                            int opcion;
+                            cin >> opcion;
+                            if (!cin) throw "\033[0;91;49m[Error]: Ingrese un número entero. \033[0m";
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                            if(opcion == 1){
+                                estado = EliminarDisco(rm.path);
+                                if(estado) cout << "\033[0;92;49m[Correcto]: Se ha eliminado el disco \"" << rm.path << "\" correctamente. \033[0m" << endl;
+                                else cout << "\033[0;91;49m[Error]: No se pudo eliminar el disco. Error interno. \033[0m" << endl;
+                            }else if (opcion == 2) cout << "[Mensaje]: El disco no se será eliminado.." << endl;
+                            else cout << "\033[0;91;49m[Error]: Opción ingresada incorrecta.\033[0m" << endl;
                         }
                         incompleto = false;
                         break;
@@ -118,12 +140,12 @@ int Analizador(char *Comando, bool esScript){
             {
                 incompleto = false;
                 cout << e.what() << endl;
-                cout << "--> Ha ocurrido un error en el sistema al intentar analizar los parametros." << endl;
+                cout << "\033[0;91;49m[Error]: Ha ocurrido un error en el sistema al intentar analizar los parametros.\033[0m" << endl;
             }catch(const char *err){
-                cout << "Algo ocurrió: []" <<  err << "]." << endl;
+                cout << "\033[0;91;49m[Error]: Algo ocurrió: [" <<  err << "]. \033[0m" << endl;
             }catch(...){
                 incompleto = false;
-                cout << "--> Ha ocurrido un error en el sistema al intentar analizar los parametros." << endl;
+                cout << "\033[0;91;49m[Error]: Ha ocurrido un error en el sistema al intentar analizar los parametros. \033[0m" << endl;
             }
         }
         //* Comentarios
