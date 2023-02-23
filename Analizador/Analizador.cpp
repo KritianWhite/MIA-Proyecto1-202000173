@@ -77,9 +77,9 @@ int Analizador(char *Comando, bool esScript){
                             ifstream script;
                             string comandoScript;
                             script.open(e.path, ios::in);
-                            if(script.fail()) cout << "Error crítico: no pudo abrirse el archivo " << e.path << endl;
+                            if(script.fail()) cout << "\033[0;91;49m[Error]: No pudo abrirse el archivo " << e.path << "\033[0m" << endl;
                             else{
-                                cout << "EJECUTANDO COMANDO DEL eea" << endl;
+                                cout << "Iniciando ejecución del script..."<< e.path << endl;
                                 int estado;
                                 while (!script.eof()){
                                     comandoScript = "";
@@ -89,7 +89,7 @@ int Analizador(char *Comando, bool esScript){
                                         if(estado == 1) break;
                                         else if (estado == 2){
                                             string enter = "";
-                                            cout << "Presione ENTER para continuar.." << endl;
+                                            cout << "--> Presione ENTER para continuar.." << endl;
                                             getline(cin, enter);
                                         }
                                     }
