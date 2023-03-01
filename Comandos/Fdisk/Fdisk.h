@@ -1,14 +1,13 @@
 #ifndef FDISK_H
 #define FDISK_H
 
-#include <iostream>
 
-using namespace std;
 
-bool CrearParticion(string diskPath, string partitionName, int partitionSize, char sizeUnit, char partitionType, char partitionFit);
-bool EliminarParticion(string diskPath, string partitionName, string deletionType);
-bool isNumber(char c);
-bool isLetter(char c);
+//bool isNumber(char c);
+//bool isLetter(char c);
+
+char idMBR_ = 'a';
+char nullChar_ = '\0';
 
 struct Fdisk{
     bool acceso;

@@ -1,5 +1,5 @@
-#ifndef STRUCTURES_H
-#define STRUCTURES_H
+#ifndef ESTRUCTURAS_H
+#define ESTRUCTURAS_H
 
 #include <ctime>
 
@@ -26,4 +26,14 @@ struct MBR{
     // printf("Today is %s", ctime(&mbr_fecha_creacion));
 };
 
-#endif // STRUCTURES_H
+struct EBR{
+    // part_status: E (EMPTY: Es el primer EBR y no hay lógicas), A (ACTIVE)
+    char part_status;
+    char part_fit; // F | B | W
+    int part_start; // byte del disco donde inicia la partición lógica
+    int part_s; // tamaño total de la partición lógica en bytes
+    int part_next; // byte en el que está el próximo EBR, -1 si no hay siguiente (default)
+    char part_name[16]; // nombre de la partición lógica
+};
+
+#endif // ESTRUCTURAS_H

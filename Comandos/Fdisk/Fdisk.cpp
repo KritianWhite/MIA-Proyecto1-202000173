@@ -1,30 +1,15 @@
 #include <iostream>
 #include <string.h>
 #include <cctype>
+#include <fstream>
+#include <limits>
 
 #include "Fdisk.h"
+#include "../Estructura.h"
+#include "../../aux_funciones.h"
 
 using namespace std;
 
-bool CrearParticion(string diskPath, string partitionName, int partitionSize, char sizeUnit, char partitionType, char partitionFit){
-
-}
-
-bool EliminarParticion(string diskPath, string partitionName, string deletionType){
-
-}
-
-//* Para la verificacion de numeros positivos
-bool isNumber(char c){
-    if(c >= 48 && c <= 57) return true;
-    return false;
-}
-
-//* Para la verificacion de texto
-bool isLetter(char c){
-    if((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return true;
-    return false;
-}
 
 Fdisk _Fdisk(char *parametros){
 
@@ -134,6 +119,7 @@ Fdisk _Fdisk(char *parametros){
                 parametroActual += parametros[i];
                 if(parametros[i] == '\"'){vPath = false; path = ""; estado = 7;}
                 else if (parametros[i] == '/'){vPath = false; path = ""; path += parametros[i]; estado = 8;}
+                else if(parametros[i] == 9 || parametros[i] == 32) ;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;
@@ -146,7 +132,7 @@ Fdisk _Fdisk(char *parametros){
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else path += parametros[i];
                 break;
             }
             //* Reconocimiento de la path sin comillas
@@ -158,7 +144,7 @@ Fdisk _Fdisk(char *parametros){
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else path += parametros[i];
                 break;
             }
             //TODO --> SIZE
@@ -180,7 +166,7 @@ Fdisk _Fdisk(char *parametros){
             }
             //* Reconocimiento del caracter e
             case 11: {
-                parametroActual += parametros[i];
+                parametroActual += parametros[0];
                 if ((char)tolower(parametros[i]) == 'e') estado = 12;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
@@ -226,10 +212,11 @@ Fdisk _Fdisk(char *parametros){
             //TODO --> NAME
             //* Reconocimiento del caracter a
             case 16: {
+                //cout << "Llegue al 16" << endl;
                 parametroActual += parametros[i];
                 if((char)tolower(parametros[i]) == 'a') estado = 17;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else {estado = -1;}
                 break;
             }
             //* Reconocimiento del caracter m
@@ -237,7 +224,7 @@ Fdisk _Fdisk(char *parametros){
                 parametroActual += parametros[i];
                 if((char)tolower(parametros[i]) == 'm') estado = 18;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else {estado = -1;}
                 break;
             }
             //* Reconocimiento del caracter e
@@ -245,7 +232,7 @@ Fdisk _Fdisk(char *parametros){
                 parametroActual += parametros[i];
                 if((char)tolower(parametros[i]) == 'e') estado = 19;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else {estado = -1;}
                 break;
             }
             //* Reconocimiento del caracter =
@@ -260,6 +247,7 @@ Fdisk _Fdisk(char *parametros){
             case 20: {
                 parametroActual += parametros[i];
                 if(parametros[i] == '\"') {vNombre = false; nombreParticion = ""; estado = 21;}
+                else if (parametros[i] == 9 || parametros[i] == 32) ;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else {vNombre = false; nombreParticion = ""; nombreParticion += parametros[i]; estado = 22;}
                 break;
@@ -272,11 +260,11 @@ Fdisk _Fdisk(char *parametros){
                             nombreParticion[i] = tolower(nombreParticion[i]);
                         }
                         vNombre = true;
-                    }else cout << "\033[0;91;49m[Error]: \"" << parametroActual << "\" asigne un nombre al disco. \033[0m" << endl;
+                    }else cout << "\033[0;91;49m[Error]: \"" << parametroActual << "\" asigne un nombre a la particion. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else nombreParticion += parametros[i];
                 break;
             }
             //* Reconocimiento del nombre sin comillas
@@ -292,7 +280,7 @@ Fdisk _Fdisk(char *parametros){
                     parametroActual = ""; 
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else nombreParticion += parametros[i];
                 break;
             }
             //TODO --> UNIT
@@ -332,6 +320,7 @@ Fdisk _Fdisk(char *parametros){
             case 27: {
                 parametroActual += parametros[i];
                 if(isLetter(parametros[i])){vUnit = false; tamanoUnitStr = parametros[i]; estado = 28;}
+                else if (parametros[i] == 9 || parametros[i] == 32) ;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;
@@ -341,9 +330,9 @@ Fdisk _Fdisk(char *parametros){
                 parametroActual += parametros[i];
                 if(isLetter(parametros[i]))tamanoUnitStr += parametros[i];
                 else if(parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    if(strcasecmp(tamanoParticionStr.c_str(), "b") == 0){vUnit = true; tamanoUnit = 'B';}
-                    else if (strcasecmp(tamanoParticionStr.c_str(), "k") == 0){vUnit = true; tamanoUnit = 'K';}
-                    else if (strcasecmp(tamanoParticionStr.c_str(), "m") == 0){vUnit = true; tamanoUnit = 'M';}
+                    if(strcasecmp(tamanoUnitStr.c_str(), "b") == 0){vUnit = true; tamanoUnit = 'B';}
+                    else if (strcasecmp(tamanoUnitStr.c_str(), "k") == 0){vUnit = true; tamanoUnit = 'K';}
+                    else if (strcasecmp(tamanoUnitStr.c_str(), "m") == 0){vUnit = true; tamanoUnit = 'M';}
                     else cout << "\033[0;91;49m[Error]: No se reconocio la unidad en el parametro " << parametroActual << " del comando fdisk \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;

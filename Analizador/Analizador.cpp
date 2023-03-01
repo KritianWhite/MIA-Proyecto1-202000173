@@ -11,6 +11,7 @@
 #include "./../Comandos/Execute/Execute.cpp"
 #include "./../Comandos/Mkdisk/Mkdisk.cpp"
 #include "./../Comandos/Rmdisk/Rmdisk.cpp"
+#include "./../Comandos/Fdisk/Fdisk.cpp"
 
 using namespace std;
 
@@ -43,6 +44,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "mkdisk") == 0){produccion = 2; cmmd = mkdisk_command;}
             //* Comando rmdisk
             else if (strcasecmp(parte, "rmdisk") == 0){produccion = 2; cmmd = rmdisk_command;}
+            //* Comando fdisk
+            else if (strcasecmp(parte, "fdisk") == 0) {produccion = 2; cmmd = fdisk_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario] > " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -133,6 +136,11 @@ int Analizador(char *Comando, bool esScript){
                         }
                         incompleto = false;
                         break;
+                    }
+                    case fdisk_command: {
+                        Fdisk fd;
+                        fd = _Fdisk(parte);
+
                     }
                 }
             }
