@@ -13,6 +13,7 @@
 #include "./../Comandos/Rmdisk/Rmdisk.cpp"
 #include "./../Comandos/Fdisk/Fdisk.cpp"
 #include "./../Comandos/Mount/Mount.cpp"
+#include "./../Comandos/Unmount/Unmount.cpp"
 
 using namespace std;
 
@@ -51,6 +52,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "fdisk") == 0) {produccion = 2; cmmd = fdisk_command;}
             //* Comando mount
             else if (strcasecmp(parte, "mount") == 0){produccion = 2; cmmd = mount_command;}
+            //* Comando unmount
+            else if (strcasecmp(parte, "unmount") == 0){produccion = 2; cmmd = unmount_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario] > " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -226,6 +229,10 @@ int Analizador(char *Comando, bool esScript){
                         }
                         incompleto = false;
                         break;
+                    }
+                    case unmount_command: {
+                        Unmount umnt;
+                        umnt = _Unmount(parte);
                     }
                 }
             }
