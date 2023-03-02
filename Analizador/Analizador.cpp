@@ -12,6 +12,7 @@
 #include "./../Comandos/Mkdisk/Mkdisk.cpp"
 #include "./../Comandos/Rmdisk/Rmdisk.cpp"
 #include "./../Comandos/Fdisk/Fdisk.cpp"
+#include "./../Comandos/Mount/Mount.cpp"
 
 using namespace std;
 
@@ -46,6 +47,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "rmdisk") == 0){produccion = 2; cmmd = rmdisk_command;}
             //* Comando fdisk
             else if (strcasecmp(parte, "fdisk") == 0) {produccion = 2; cmmd = fdisk_command;}
+            //* Comando mount
+            else if (strcasecmp(parte, "mount") == 0){produccion = 2; cmmd = mount_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario] > " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -140,6 +143,76 @@ int Analizador(char *Comando, bool esScript){
                     case fdisk_command: {
                         Fdisk fd;
                         fd = _Fdisk(parte);
+                        //* Se verifica primeramente que exista alguna particion con el acceso
+                        if (fd.acceso){
+                            if(fd.deletionType != ""){
+                                //* Eliminación de la partición
+                                estado = EliminarParticion(fd.diskPath, fd.partitionName, "full");
+                                if(estado) cout << "\033[0;92;49m[Correcto]: Se ha eliminado la particion \"" << fd.partitionName << "\" correctamente. \033[0m" << endl;
+                                else cout << "\033[0;91;49m[Error]: Ocurrió algún error al tratar de eliminar la partición. \033[0m" << endl;
+                            }else if (fd.resizePartition){
+                                cout << "[Mensaje]: Modificando el tamaño de la partición." << endl;
+                                estado = false;
+                            }else{
+                                //* Creación de la partición
+                                estado = CrearParticion(fd.diskPath, fd.partitionName, fd.partitionSize, fd.sizeUnit, fd.partitionType, fd.partitionFit);
+                                string typeParticion;
+                                
+                                if(fd.partitionType == 'P') typeParticion = "primaria";
+                                else if(fd.partitionType == 'E') typeParticion = "extendida";
+                                else typeParticion = "logica";
+
+                                if(estado){
+                                    switch(fd.sizeUnit){
+                                        case 'B': {
+                                            cout << "\033[0;92;49m[Correcto]: Se ha creado la partición " << typeParticion << 
+                                            " \"" << fd.partitionName <<"\" de tamaño " << to_string(fd.partitionSize) << " B " << 
+                                            " en "<< fd.diskPath <<" correctamente. \033[0m" << endl;
+                                            break;
+                                        }
+                                        case 'K': {
+                                            cout << "\033[0;92;49m[Correcto]: Se ha creado la partición " << typeParticion << 
+                                            " \"" << fd.partitionName <<"\" de tamaño " << to_string(fd.partitionSize) << " KB " << 
+                                            " en "<< fd.diskPath <<" correctamente. \033[0m" << endl;
+                                            break;
+                                        }
+                                        case 'M': {
+                                            cout << "\033[0;92;49m[Correcto]: Se ha creado la partición " << typeParticion << 
+                                            " \"" << fd.partitionName <<"\" de tamaño " << to_string(fd.partitionSize) << " MB " << 
+                                            " en "<< fd.diskPath <<" correctamente. \033[0m" << endl;
+                                            break;
+                                        }
+                                    }
+                                }else {
+                                    switch(fd.sizeUnit){
+                                        case 'B': {
+                                            cout << "\033[0;91;49m[Error]: Ocurrió un error durante la creación de la partición " << 
+                                            typeParticion << " \"" << fd.partitionName <<"\" de tamaño " << to_string(fd.partitionSize) << 
+                                            " B " << " en "<< fd.diskPath <<". \033[0m" << endl;
+                                            break;
+                                        }
+                                        case 'K': {
+                                            cout << "\033[0;91;49m[Error]: Ocurrió un error durante la creación de la partición " << 
+                                            typeParticion << " \"" << fd.partitionName <<"\" de tamaño " << to_string(fd.partitionSize) << 
+                                            " KB " << " en "<< fd.diskPath <<". \033[0m" << endl;
+                                            break;
+                                        }
+                                        case 'M': {
+                                            cout << "\033[0;91;49m[Error]: Ocurrió un error durante la creación de la partición " << 
+                                            typeParticion << " \"" << fd.partitionName <<"\" de tamaño " << to_string(fd.partitionSize) << 
+                                            " MB " << " en "<< fd.diskPath <<". \033[0m" << endl;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }//* End if acceso
+                        incompleto = false;
+                        break;
+                    }
+                    case mount_command: {
+                        Mount mnt;
+                        mnt = _Mount(parte);
 
                     }
                 }

@@ -5,7 +5,7 @@
 // Ids para identificar structs en la lectura del disco
 //char idMBR = 'a';
 // Zero -> Never used | Nullchar -> Used and deleted
-//char zero = '0', one = '1';
+//char cero = '0', one = '1';
 //char nullChar = '\0';
 
 char cero = '0', uno = '1', nullChar = '\0', idMBR = 'a';

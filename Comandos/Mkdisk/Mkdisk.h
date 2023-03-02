@@ -5,11 +5,6 @@
 
 using namespace std;
 
-//char cero = '0', uno = '1', nullChar = '\0', idMBR = 'a';
-
-// bool isNumber(char c);
-// bool isLetter(char c);
-
 struct Mkdisk{
     bool acceso;
     string diskPath;

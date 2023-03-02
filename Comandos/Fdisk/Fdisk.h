@@ -1,13 +1,8 @@
 #ifndef FDISK_H
 #define FDISK_H
 
-
-
-//bool isNumber(char c);
-//bool isLetter(char c);
-
-char idMBR_ = 'a';
-char nullChar_ = '\0';
+bool CrearParticion(string diskPath, string partitionName, int partitionSize, char sizeUnit, char partitionType, char partitionFit);
+bool EliminarParticion(string diskPath, string partitionName, string deletionType);
 
 struct Fdisk{
     bool acceso;
@@ -22,4 +17,4 @@ struct Fdisk{
     int sizetoChange;
 };
 
-#endif // !FDISK_H
+#endif // FDISK_H

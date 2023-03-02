@@ -94,18 +94,6 @@ bool CrearDisco(Mkdisk mk){
     return false;
 }
 
-// //TODO --> Para la verificacion de numeros positivos
-// bool isNumber(char c){
-//     if(c >= 48 && c <= 57) return true;
-//     return false;
-// }
-
-// //TODO para la verificacion de texto
-// bool isLetter(char c){
-//     if((c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return true;
-//     return false;
-// }
-
 Mkdisk _Mkdisk(char *parametros){
     
     //* Variables de control
@@ -204,7 +192,7 @@ Mkdisk _Mkdisk(char *parametros){
                     estado = 0;
                 }else if (parametros[i] == '/'){diskPath += diskName; diskPath += parametros[i]; diskName = "";}
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else diskName += parametros[i];
                 break;
             }
             //* Reconocimiento de la Path sin comillas.

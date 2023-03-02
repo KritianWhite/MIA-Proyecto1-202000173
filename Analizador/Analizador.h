@@ -18,7 +18,8 @@ enum commands {
     execute_command = 1,
     mkdisk_command = 2,
     rmdisk_command = 3,
-    fdisk_command = 4
+    fdisk_command = 4,
+    mount_command = 5
 };
 
 
