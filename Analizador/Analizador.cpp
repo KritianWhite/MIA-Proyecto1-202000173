@@ -16,6 +16,8 @@
 
 using namespace std;
 
+PartitionNode* listMountedPartitions = NULL;
+
 bool sesionAbierta = false;
 string nombreUsuario = "", pariticionID = "";
 
@@ -213,7 +215,17 @@ int Analizador(char *Comando, bool esScript){
                     case mount_command: {
                         Mount mnt;
                         mnt = _Mount(parte);
-
+                        if(mnt.acceso){
+                            if(mnt.diskPath != "" && mnt.diskName != "" && mnt.partitionName != ""){
+                                estado = ParticionMount(mnt, listMountedPartitions);
+                                if(estado) cout << "\033[0;92;49m[Correcto]: Se ha montado la particion " << mnt.partitionName << 
+                                " del disco " << mnt.diskPath << mnt.diskName << " correctamente. \033[0m" << endl;
+                                else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar montar la particion " << mnt.partitionName << 
+                                " del disco " << mnt.diskPath << mnt.diskName << ". Error interno, \033[0m" << endl;
+                            }else showMountedPartitions(listMountedPartitions);
+                        }
+                        incompleto = false;
+                        break;
                     }
                 }
             }

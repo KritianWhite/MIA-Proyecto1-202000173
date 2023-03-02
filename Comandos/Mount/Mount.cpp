@@ -5,9 +5,201 @@
 
 #include "Mount.h"
 #include "../../aux_funciones.h"
+#include "../Estructura.h"
 
 using namespace std;
 
+bool ParticionMount(Mount mnt, PartitionNode *&primero){
+    
+    //* Variables de control
+    ifstream disco;
+    string pathCompleto = "";
+    string nombreDisco = "";
+    char auxiliar;
+
+    string extension = "";
+    for (int i = mnt.diskName.length() -1; i >= 0; i--){
+        if(mnt.diskName[i] == '.'){
+            extension = mnt.diskName.substr(i + 1, mnt.diskName.length());
+            break;
+        }
+    }
+    nombreDisco = mnt.diskName.substr(0, mnt.diskName.length() - extension.length() - 1);
+    cout << "--> Obteniendo datos del disco..." << endl;
+    pathCompleto +=  mnt.diskPath;
+    pathCompleto += mnt.diskName;
+    disco.open(pathCompleto, ios::in|ios::binary);
+    if(disco.fail()){
+        cout << "\033[0;91;49m[Error]: No se ha podido abrir el disco en " << pathCompleto << ". \033[0m" << endl;
+        disco.close();
+        return false;
+    }
+
+    disco.read((char *)&auxiliar, sizeof(char));
+    if(auxiliar != idMBR){
+        cout << "\033[0;91;49m[Error]: No vino char idMBR antes de MBR. Error interno. \033[0m" << endl;
+        disco.close();
+        return false;
+    }
+
+    MBR mb;
+    disco.read((char *)&mb, sizeof(MBR));
+
+    bool existeParticion = false;
+    int numeroParticionExt = 0;
+
+    while(true){
+        if(mb.mbr_partition_1.part_status != 'E'){
+            if(mb.mbr_partition_1.part_name == mnt.partitionName){
+                if(mb.mbr_partition_1.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: No puede montarse la particion " << mnt.partitionName 
+                    << " ya que es extendida. \033[0m" << endl;
+                    disco.close();
+                    return false;
+                }
+                existeParticion = true;
+                break;
+            }
+            if(mb.mbr_partition_1.part_type == 'E') numeroParticionExt = 1;
+        }
+        if(mb.mbr_partition_2.part_status != 'E'){
+            if(mb.mbr_partition_2.part_name == mnt.partitionName){
+                if(mb.mbr_partition_2.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: No puede montarse la particion " << mnt.partitionName 
+                    << " ya que es extendida. \033[0m" << endl;
+                    disco.close();
+                    return false;
+                }
+                existeParticion = true;
+                break;
+            }
+            if(mb.mbr_partition_2.part_type == 'E') numeroParticionExt = 2;
+        }
+        if(mb.mbr_partition_3.part_status != 'E'){
+            if(mb.mbr_partition_3.part_name == mnt.partitionName){
+                if(mb.mbr_partition_3.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: No puede montarse la particion " << mnt.partitionName 
+                    << " ya que es extendida. \033[0m" << endl;
+                    disco.close();
+                    return false;
+                }
+                existeParticion = true;
+                break;
+            }
+            if(mb.mbr_partition_3.part_type == 'E') numeroParticionExt = 3;
+        }
+        if(mb.mbr_partition_4.part_status != 'E'){
+            if(mb.mbr_partition_4.part_name == mnt.partitionName){
+                if (mb.mbr_partition_4.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: No puede montarse la particion " << mnt.partitionName 
+                    << " ya que es extendida. \033[0m" << endl;
+                    disco.close();
+                    return false;
+                }
+                existeParticion = true;
+                break;
+            }
+            if(mb.mbr_partition_4.part_type == 'E') existeParticion = 4;
+        }
+        break;
+    }//* End while loop
+
+    //* Validamos que la particion exista en el disco duro
+    if(!existeParticion){
+        if(numeroParticionExt == 0){
+            cout << "\033[0;91;49m[Error]: La particion " << mnt.partitionName 
+            << " no pudo encontrarse en el disco con ruta " << 
+            pathCompleto << ". \033[0m" << endl;
+            disco.close();
+            return false;
+        }
+
+        //* Verificamos si es logica
+        EBR ebAux;
+        switch(numeroParticionExt){
+            case 1: {
+                disco.seekg(mb.mbr_partition_1.part_start);
+                disco.read((char *)&ebAux, sizeof(EBR));
+                break;
+            }
+            case 2: {
+                disco.seekg(mb.mbr_partition_2.part_start);
+                disco.read((char *)&ebAux, sizeof(EBR));
+                break;
+            }
+            case 3: {
+                disco.seekg(mb.mbr_partition_3.part_start);
+                disco.read((char *)&ebAux, sizeof(EBR));
+                break;
+            }
+            case 4: {
+                disco.seekg(mb.mbr_partition_4.part_start);
+                disco.read((char *)&ebAux, sizeof(EBR));
+                break;
+            }
+        }
+
+        //* Si no hay particiones logicas
+        if(ebAux.part_status == 'E'){
+            cout << "\033[0;91;49m[Error]: La particion " << mnt.partitionName 
+            << " no pudo encontrarse en el disco con ruta " << 
+            pathCompleto << ". \033[0m" << endl;
+            disco.close();
+            return false;
+        }
+
+        //* Recorriendo las particiones logicas para encontrar el nombre
+        int contador = 1;
+        do{
+            if(ebAux.part_name == mnt.partitionName){
+                existeParticion = true;
+                break;
+            }
+
+            if(ebAux.part_next == -1) break;
+
+            disco.seekg(ebAux.part_next);
+            disco.read((char *)&ebAux, sizeof(EBR));
+            contador += 1;
+        }while(contador <= 12);
+
+        if (contador > 12){
+            cout << "\033[0;91;49m[Error]: Se detectaron mas de 12 particiones logicas (ver su creación en fdisk). \033[0m" << endl;
+            disco.close();
+            return false;
+        }
+
+        if(!existeParticion){
+            cout << "\033[0;91;49m[Error]: La particion " << mnt.partitionName 
+            << " no pudo encontrarse en el disco con ruta " << 
+            pathCompleto << ". \033[0m" << endl;
+            disco.close();
+            return false;
+        }
+        //* En este punto, la particion existe, por lo que continuamos
+        cout << "--> Partición logica detectada..." << endl;
+    }else cout << "--> Partición primaria detectada..." << endl;
+
+    //* Validamos que la particion no se encuentre montada
+    if(isPartitionMounted(primero, mnt.partitionName, pathCompleto)){
+        cout << "\033[0;91;49m[Error]: La particion " << mnt.partitionName << " del disco " << pathCompleto
+        << " ya se encuentra montada en memoria. ID: " << getPartitionId(primero, mnt.partitionName) << ". \033[0m" << endl;
+        disco.close();
+        return false;
+    }
+
+    cout << "--> Montando la partición en memoria..." << endl;
+    bool insert = insertMountedPartition(primero, mnt.partitionName, nombreDisco, pathCompleto);
+    if(!insert){
+        cout << "\033[0;91;49m[Error]: La particion " << mnt.partitionName << " del disco " << pathCompleto
+        << " no pudo montarse. (Posible causa: eliminación de particiones, pero no en la lista enlazada. \033[0m" << endl;
+        disco.close();
+        return false;
+    }
+
+    disco.close();
+    return true;
+}
 
 Mount _Mount(char *parametros){
     //* Variables de control
