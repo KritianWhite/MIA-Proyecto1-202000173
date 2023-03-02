@@ -233,6 +233,15 @@ int Analizador(char *Comando, bool esScript){
                     case unmount_command: {
                         Unmount umnt;
                         umnt = _Unmount(parte);
+                        if(umnt.acceso){
+                            estado = ParticionUnmount(umnt.partitionId, listMountedPartitions);
+                            if(estado) cout << "\033[0;92;49m[Correcto]: Se ha desmontado la particion " 
+                            << umnt.partitionId << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar desmontar la particion " 
+                            << umnt.partitionId << ". Error interno, \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
                     }
                 }
             }

@@ -7,6 +7,26 @@
 using namespace std;
 
 
+bool ParticionUnmount(string partitionId, PartitionNode *&primero){
+    cout << "--> comprobando que la particion esté montada..." << endl;
+    if(!isIdInList(primero, partitionId)){
+        cout << "\033[0;91;49m[Error]: La particion con el id " << partitionId << 
+        " no se pudo encontrar en la lista de particiones montadas. \033[0m" << endl;
+        return false;
+    }
+
+    bool eliminar = deletePartitionFromList(primero, partitionId);
+
+    if(!eliminar){
+        cout << "\033[0;91;49m[Error]: La particion con el id " << partitionId << 
+        " no pudo desmontarse. Error interno. \033[0m" << endl;
+        return false;
+    }
+
+    return true;
+}
+
+
 Unmount _Unmount(char *parametros){
     //* Variables de control
     int estado = 0;
