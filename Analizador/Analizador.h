@@ -20,7 +20,8 @@ enum commands {
     rmdisk_command = 3,
     fdisk_command = 4,
     mount_command = 5,
-    unmount_command = 6
+    unmount_command = 6,
+    fsdisk_command = 7
 };
 
 
