@@ -56,7 +56,7 @@ int Analizador(char *Comando, bool esScript){
             //* Comando unmount
             else if (strcasecmp(parte, "unmount") == 0){produccion = 2; cmmd = unmount_command;}
             //* Comando fsdisk
-            else if (strcasecmp(parte, "mkfs") == 0){produccion = 2; cmmd = fsdisk_command;}
+            else if (strcasecmp(parte, "mkfs") == 0){produccion = 2; cmmd = mkfs_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario] > " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -246,7 +246,7 @@ int Analizador(char *Comando, bool esScript){
                         incompleto = false;
                         break;
                     }
-                    case fsdisk_command: {
+                    case mkfs_command: {
                         Mkfs mf;
                         mf = _Mkfs(parte);
                         if(mf.acceso){
