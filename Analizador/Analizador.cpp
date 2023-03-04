@@ -249,6 +249,15 @@ int Analizador(char *Comando, bool esScript){
                     case fsdisk_command: {
                         Mkfs mf;
                         mf = _Mkfs(parte);
+                        if(mf.acceso){
+                            estado = FormatoParticion(mf, listMountedPartitions);
+                            if(estado) cout << "\033[0;92;49m[Correcto]: Se ha formateado la particion " << mf.partitionId
+                            << " con el sistema de archivo ext" << mf.fileSystem << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar formatear la particion " <<
+                            mf.partitionId << " con el sistema de archivos ext" << mf.fileSystem << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
                     }
                 }
             }
