@@ -21,7 +21,8 @@ enum commands {
     fdisk_command = 4,
     mount_command = 5,
     unmount_command = 6,
-    mkfs_command = 7
+    mkfs_command = 7,
+    login_command = 8
 };
 
 

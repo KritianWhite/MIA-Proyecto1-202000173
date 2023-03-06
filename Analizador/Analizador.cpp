@@ -15,6 +15,7 @@
 #include "./../Comandos/Mount/Mount.cpp"
 #include "./../Comandos/Unmount/Unmount.cpp"
 #include "./../Comandos/Mkfs/Mkfs.cpp"
+#include "./../Comandos/Login/Login.cpp"
 
 using namespace std;
 
@@ -57,8 +58,10 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "unmount") == 0){produccion = 2; cmmd = unmount_command;}
             //* Comando fsdisk
             else if (strcasecmp(parte, "mkfs") == 0){produccion = 2; cmmd = mkfs_command;}
+            //* Comando login
+            else if (strcasecmp(parte, "login") == 0){produccion = 2; cmmd = login_command;}
             //* Reconocimiento de comentarios.
-            else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario] > " << parte << "\033[0m" << endl; produccion = 4;}
+            else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario]: " << parte << "\033[0m" << endl; produccion = 4;}
 
             //TODO --> Cuando los usuarios existen verificamos la particion donde se encuentra el usuario
             if (produccion == 2 || produccion == 3){
@@ -255,6 +258,21 @@ int Analizador(char *Comando, bool esScript){
                             << " con el sistema de archivo ext" << mf.fileSystem << " correctamente. \033[0m" << endl;
                             else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar formatear la particion " <<
                             mf.partitionId << " con el sistema de archivos ext" << mf.fileSystem << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case login_command: {
+                        Login lg;
+                        lg = _Login(parte);
+                        if(lg.acceso){
+                            estado = LoginUser(sesionAbierta, lg.partitionId, lg.username, lg.password, listMountedPartitions);
+                            if(estado){
+                                cout << "\033[0;92;49m[Correcto]: Inicio de sesion exitoso. Bienvenido " << lg.username << ".  \033[0m" << endl;
+                                sesionAbierta = true;
+                                nombreUsuario = lg.username;
+                                pariticionID = lg.partitionId;
+                            }else cout << "\033[0;91;49m[Error]: Inicio de sesion fallido como " << lg.username << ".  \033[0m" << endl;
                         }
                         incompleto = false;
                         break;

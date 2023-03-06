@@ -5,396 +5,377 @@
 
 #include "Mkfs.h"
 #include "../Estructura.h"
-#include "../../aux_funciones.h"
+//#include "../../aux_funciones.h"
 
 using namespace std;
 
 
 int Calc_NumeroInodos(int partitionSize, int fileSystem, bool isLogicalPartition){
     /*
-    *FORMULA
-    *partition_size = Superblock + InodeBitmap + BlockBitmap + Inodes + Blocks
+    FORMULA
+    partition_size = Superblock + InodeBitmap + BlockBitmap + Inodes + Blocks
     * partition.part_s = sizeof(Superblock) + n + 3n + n*sizeof(Inode) + 3n*sizeof(Block)
-    *partition.part_s - sizeof(Superblock) = 4n + n*(sizeof(Inode) + 3*sizeof(Block))
-    *n*(4 + sizeof(Inode) + 3*sizeof(Block)) = partition.part_s - sizeof(Superblock)
-    *
-    *numerator = partition.part_s - sizeof(Superblock)   [- sizeof(EBR) for logical partitions]
-    *denominator = 4 + sizeof(Inode) + 3*sizeof(Block)
-    *n = numerator / denominator
-    *
-    *-> Available inodes: n
-    *-> Available blocks: 3n
-    */
+    partition.part_s - sizeof(Superblock) = 4n + n*(sizeof(Inode) + 3*sizeof(Block))
+    n*(4 + sizeof(Inode) + 3*sizeof(Block)) = partition.part_s - sizeof(Superblock)
 
-    float numerador, denominador, resultado;
+    numerator = partition.part_s - sizeof(Superblock)   [- sizeof(EBR) for logical partitions]
+    denominator = 4 + sizeof(Inode) + 3*sizeof(Block)
+    n = numerator / denominator
+
+    -> Available inodes: n
+    -> Available blocks: 3n
+    */
+    float numerator, denominator, result;
     int inodes = 0;
     if(!isLogicalPartition){
-        //* EXT2
-        numerador = partitionSize - sizeof(Superblock);
-        //* 4 char para bitmaps, 1 inodo, 3 bloques
-        denominador = 4*sizeof(char) + sizeof(Inode) + 3*sizeof(FileBlock);
-        resultado = numerador / denominador;
-        //* Redondeando el numero al entero mas cercano
-        int inodes = floor(resultado);
+        /* EXT2 */
+        numerator = partitionSize - sizeof(Superblock);
+        denominator = 4*sizeof(char) + sizeof(Inode) + 3*sizeof(FileBlock); // 4 char para bitmaps, 1 inodo, 3 bloques
+        result = numerator / denominator;
+        int inodes = floor(result);
         return inodes;
+        // TODO EXT3
     }
+    // TODO INODES NUMBER LOGICAL PARTITION
 
     return inodes;
 }
 
-bool FormatoParticion(Mkfs mf, PartitionNode *&primerNodo){
-    //* Verificamos que el id representa una particion montada
-    if(!isIdInList(primerNodo, mf.partitionId)){
-        cout << "[Mensaje]: La particion con id " << mf.partitionId << " no fue encontrada " <<
-        " en la lista de particiones montadas (use mount para ver la lista de particiones)" << endl;
-        return false; 
+bool FormatoParticion(Mkfs mf, PartitionNode *&firstNode){
+    /* Verificando que el id represente una partición montada */
+    if (!isIdInList(firstNode, mf.partitionId)){
+        cout << "\033[0;91;49m[Error]: La particion con id " << mf.partitionId <<
+        " no fue encontrada en la lista de particiones montadas (use mount para ver esta lista) \033[0m" << endl;
+        return false;
     }
 
     cout << "--> Obteniendo datos del disco..." << endl;
-    fstream disco;
-    string path = getDiskPath(primerNodo, mf.partitionId);
-    disco.open(path, ios::in|ios::out|ios::binary);
-    if(disco.fail()){
-        cout << "\033[0;91;49m[Error]: No se puede abrir el disco asociado a la particion " << 
-        mf.partitionId << " de la ruta " << path << "\033[0m" << endl;
-        disco.close();
+    fstream disk;
+    string diskPath = getDiskPath(firstNode, mf.partitionId);
+    disk.open(diskPath, ios::in|ios::out|ios::binary);
+    if(disk.fail()){
+        cout << "\033[0;91;49m[Error]: No se ha podido abrir el disco asociado a la partición " << mf.partitionId <<
+        ", con ruta " << diskPath << "\033[0m" << endl;
+        disk.close();
         return false;
     }
 
-    char auxiliar;
-    disco.read((char *)&auxiliar, sizeof(char));
-    if(auxiliar != idMBR){
-        cout << "\033[0;91;49m[Error]: No vino char idMBR antes del MBR. Error interno. \033[0m" << endl;
-        disco.close();
+    char aux;
+    disk.read((char *)&aux, sizeof(char));
+    if(aux != idMBR){
+        cout << "\033[0;91;49m[Error]: no vino char idMBR antes del MBR \033[0m" << endl;
+        disk.close();
         return false;
     }
+    MBR mbrDisk;
+    disk.read((char *)&mbrDisk, sizeof(MBR));
 
-    MBR mb;
-    disco.read((char *)&mb, sizeof(MBR));
-    string nombreParticion = getPartitionId(primerNodo, mf.partitionId);
-    int numeroParticionPrimaria = 0, particionInicial = 0, tamanoParticion = 0;
+    string partitionName = getPartitionName(firstNode, mf.partitionId);
+    int numberPrimaryPartition = 0, partitionStart = 0, partitionSize = 0;
     char partStatus = '0';
-    int numeroParticionExtendidA = 0;
+    int numberExtendedPartition = 0;
 
-    while (true){
-        if(mb.mbr_partition_1.part_start != 'E'){
-            if(mb.mbr_partition_1.part_name == nombreParticion){
-                if(mb.mbr_partition_1.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La particion montada no coincide con una extendida, " <<
-                    " solo pueden montarse primarias o extendida. \033[0m" << endl;
-                    disco.close();
+    // while para poder finalizar las validaciones cuando se encuentre la partición
+    // solo se ejecuta una vez
+    while(true){
+        if(mbrDisk.mbr_partition_1.part_status != 'E'){
+            if(mbrDisk.mbr_partition_1.part_name == partitionName){
+                if(mbrDisk.mbr_partition_1.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    disk.close();
                     return false;
                 }
-                numeroParticionPrimaria = 1;
-                particionInicial = mb.mbr_partition_1.part_start;
-                tamanoParticion = mb.mbr_partition_1.part_s;
-                partStatus = mb.mbr_partition_1.part_status;
+                numberPrimaryPartition = 1;
+                partitionStart = mbrDisk.mbr_partition_1.part_start;
+                partitionSize = mbrDisk.mbr_partition_1.part_s;
+                partStatus = mbrDisk.mbr_partition_1.part_status;
                 break;
             }
-            if(mb.mbr_partition_1.part_type == 'E') numeroParticionExtendidA = 1;
+            if(mbrDisk.mbr_partition_1.part_type == 'E') numberExtendedPartition = 1;
         }
-        if(mb.mbr_partition_2.part_start != 'E'){
-            if(mb.mbr_partition_2.part_name == nombreParticion){
-                if(mb.mbr_partition_2.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La particion montada no coincide con una extendida, " <<
-                    " solo pueden montarse primarias o extendida. \033[0m" << endl;
-                    disco.close();
+        if(mbrDisk.mbr_partition_2.part_status != 'E'){
+            if(mbrDisk.mbr_partition_2.part_name == partitionName){
+                if(mbrDisk.mbr_partition_2.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    disk.close();
                     return false;
                 }
-                numeroParticionPrimaria = 2;
-                particionInicial = mb.mbr_partition_2.part_start;
-                tamanoParticion = mb.mbr_partition_2.part_s;
-                partStatus = mb.mbr_partition_2.part_status;
+                numberPrimaryPartition = 2;
+                partitionStart = mbrDisk.mbr_partition_2.part_start;
+                partitionSize = mbrDisk.mbr_partition_2.part_s;
+                partStatus = mbrDisk.mbr_partition_2.part_status;
                 break;
             }
-            if(mb.mbr_partition_2.part_type == 'E') numeroParticionExtendidA = 2;
+            if(mbrDisk.mbr_partition_2.part_type == 'E') numberExtendedPartition = 2;
         }
-        if(mb.mbr_partition_3.part_start != 'E'){
-            if(mb.mbr_partition_3.part_name == nombreParticion){
-                if(mb.mbr_partition_3.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La particion montada no coincide con una extendida, " <<
-                    " solo pueden montarse primarias o extendida. \033[0m" << endl;
-                    disco.close();
+        if(mbrDisk.mbr_partition_3.part_status != 'E'){
+            if(mbrDisk.mbr_partition_3.part_name == partitionName){
+                if(mbrDisk.mbr_partition_3.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    disk.close();
                     return false;
                 }
-                numeroParticionPrimaria = 3;
-                particionInicial = mb.mbr_partition_3.part_start;
-                tamanoParticion = mb.mbr_partition_3.part_s;
-                partStatus = mb.mbr_partition_3.part_status;
+                numberPrimaryPartition = 3;
+                partitionStart = mbrDisk.mbr_partition_3.part_start;
+                partitionSize = mbrDisk.mbr_partition_3.part_s;
+                partStatus = mbrDisk.mbr_partition_3.part_status;
                 break;
             }
-            if (mb.mbr_partition_3.part_type == 'E') numeroParticionExtendidA = 3;
+            if(mbrDisk.mbr_partition_3.part_type == 'E') numberExtendedPartition = 3;
         }
-        if(mb.mbr_partition_4.part_start != 'E'){
-            if(mb.mbr_partition_4.part_name == nombreParticion){
-                if(mb.mbr_partition_4.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La particion montada no coincide con una extendida, " <<
-                    " solo pueden montarse primarias o extendida. \033[0m" << endl;
-                    disco.close();
+        if(mbrDisk.mbr_partition_4.part_status != 'E'){
+            if(mbrDisk.mbr_partition_4.part_name == partitionName){
+                if(mbrDisk.mbr_partition_4.part_type == 'E'){
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    disk.close();
                     return false;
                 }
-                numeroParticionPrimaria = 4;
-                particionInicial = mb.mbr_partition_4.part_start;
-                tamanoParticion = mb.mbr_partition_4.part_s;
-                partStatus = mb.mbr_partition_4.part_status;
+                numberPrimaryPartition = 4;
+                partitionStart = mbrDisk.mbr_partition_4.part_start;
+                partitionSize = mbrDisk.mbr_partition_4.part_s;
+                partStatus = mbrDisk.mbr_partition_4.part_status;
                 break;
             }
-            if(mb.mbr_partition_4.part_type == 'E') numeroParticionExtendidA = 4;
+            if(mbrDisk.mbr_partition_4.part_type == 'E') numberExtendedPartition = 4;
         }
         break;
-    }//* End while loop
+    }
 
-    //* Mkfs particion primaria
-    if(numeroParticionPrimaria != 0){
+    /* MKFS PRIMARY PARTITION */
+    if(numberPrimaryPartition != 0){
         if(partStatus == 'F'){
-            cout << "--> La particion " << nombreParticion << " ya cuenta con un sistema de archivos. " <<
-            "¿Desea formatear la unidad? (Tenga en cuenta que se perderan sus datos). Presion 1(Sí)/2(No): ";
+            cout << "--> La particion " << partitionName << " ya cuenta con un sistema de archivos, ¿desea formatearla? (sus datos se perderan)" <<
+                " Preione 1(si)/2(No): ";
             int opcion;
-            cin >> opcion; if(!cin) throw "\033[0;91;49m[Error]: Ingrese un numero entero \033[0m";
+            cin >> opcion; if(!cin) throw "\033[0;91;49m[Error]: ingrese un numero entero. \033[0m\n";
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             if(opcion == 2){
-                cout << "[Mensaje]: El formateo de la particion se ha cancelado." << endl;
-                disco.close();
+                cout << "[Mensaje]: La partición no será formateando." << endl;
+                disk.close();
                 return false;
-            }else if(opcion != 1){
-                cout << "\033[0;91;49m[Error]: Ingrese un numero valido. \033[0m" << endl;
-                disco.close();
+            }
+            else if(opcion != 1){
+                cout << "\033[0;91;49m[Error]: Ingrese un numero entero valido. \033[0m" << endl;
+                disk.close();
                 return false;
             }
         }
 
-        cout << "--> Se esta formateando " << mf.formatType << " en la particion " << mf.partitionId << "..." << endl;
-        disco.seekp(particionInicial);
-        for(int i = 0; i < tamanoParticion; i++){
-            disco.write((char*)&cero, sizeof(char));
-        }
-        //* EXT2
-        cout << "--> configurando superbloque..." << endl;
-        int inodes = Calc_NumeroInodos(tamanoParticion, mf.fileSystem, false);
+        cout << "--> Realizando formateo " << mf.formatType << " en la partición " << mf.partitionId << "..." << endl;
+        disk.seekp(partitionStart);
+        for(int i = 0; i < partitionSize; i++)
+            {disk.write((char*)&cero, sizeof(char));}
 
+        /* EXT2 */
+        cout << "--> Configurando superbloque..." << endl;
+        int inodes = Calc_NumeroInodos(partitionSize, mf.fileSystem, false);
         Superblock sb;
         sb.s_filesystem_type = mf.fileSystem;
         sb.s_inodes_count = inodes;
         sb.s_blocks_count = 3*inodes;
-        sb.s_free_blocks_count = 3*inodes; //* cambiaran conforme se agreguen los bloques
-        sb.s_free_inodes_count = inodes; //* cambiaran conforme se agreguen inodos
+        sb.s_free_blocks_count = 3*inodes; // cambiarán conforme se agreguen bloques
+        sb.s_free_inodes_count = inodes; // cambiarán conforme se agreguen inodos
         time(&sb.s_mtime);
         sb.s_umtime = NULL;
         sb.s_mnt_count = 1;
-        sb.s_magic = 61257; //* 0xEF53
+        sb.s_magic = 61267; // 0xEF53
         sb.s_inode_s = sizeof(Inode);
         sb.s_block_s = sizeof(FolderBlock);
-        sb.s_first_ino = particionInicial + sizeof(Superblock) + inodes + 3*inodes; //* Cambiaran conforme se agreguen bloques
-        sb.s_first_blo = particionInicial + sizeof(Superblock) + inodes + 3*inodes + inodes*sizeof(Inode); //* Cambiaran conforme se agreguen bloques
-        sb.s_bm_inode_start = particionInicial + sizeof(Superblock);
-        sb.s_bm_block_start = particionInicial +sizeof(Superblock) + inodes;
-        sb.s_inode_start = particionInicial + sizeof(Superblock) + inodes + 3*inodes;
-        sb.s_block_start = particionInicial + sizeof(Superblock) + inodes + 3*inodes + inodes*sizeof(Inode);
+        sb.s_first_ino = partitionStart + sizeof(Superblock) + inodes + 3*inodes; // cambiarán conforme se agreguen bloques
+        sb.s_first_blo = partitionStart + sizeof(Superblock) + inodes + 3*inodes + inodes*sizeof(Inode);  // cambiarán conforme se agreguen bloques
+        sb.s_bm_inode_start = partitionStart + sizeof(Superblock);
+        sb.s_bm_block_start = partitionStart + sizeof(Superblock) + inodes;
+        sb.s_inode_start = partitionStart + sizeof(Superblock) + inodes + 3*inodes;
+        sb.s_block_start = partitionStart + sizeof(Superblock) + inodes + 3*inodes + inodes*sizeof(Inode);
+
 
         cout << "--> Creando directorio root (/)..." << endl;
-        //* Creacion de inodo carpeta
+        /* CREACIÓN DE INODO CARPETA "/" */
         Inode root;
-        root.i_uid = 1; //* id user: 1->root
-        root.i_gid = 1; //* id group: 1-->root
-        root.i_s = -1; //* folder
-        root.i_atime = NULL;
+        root.i_uid = 1; // id user: 1->root
+        root.i_gid = 1; // id group: 1->root
+        root.i_s = -1; // folder
+        root.i_atime  = NULL;
         time(&root.i_ctime);
         time(&root.i_mtime);
-        root.i_block[0] = sb.s_first_blo; //* Bloque archivos para users.txt
-        for (int i = 1; i < 15; i++){
-            root.i_block[i] = -1;
-        }
-        root.i_type = '0'; //* folder
-        root.i_perm = 775; // rwx rwx r-x
+        root.i_block[0] = sb.s_first_blo; // BLOQUE ARCHIVOS PARA users.txt
+        for(int i = 1; i < 15; i++)
+            {root.i_block[i] = -1;}
+        root.i_type = '0'; // folder
+        root.i_perm = 775; //rwx rwx r-x
 
-        //* Escribiendo el inodo carpeta "/"
-        disco.seekp(sb.s_first_ino);
-        disco.write((char*)&root, sizeof(Inode));
+        /* Escribiendo el inodo carpeta "/" */
+        disk.seekp(sb.s_first_ino);
+        disk.write((char*)&root, sizeof(Inode));
         sb.s_first_ino += sb.s_inode_s;
         sb.s_free_inodes_count -= 1;
-        //* Escribiendo el bitmap de inodos
-        disco.seekg(sb.s_bm_inode_start);
-        while(!disco.eof()){
-            disco.read((char *)&auxiliar, sizeof(char));
-            if(!disco.eof() && auxiliar == cero){
-                //* 1 antes del cero encontrado para escribir el 1
-                disco.seekp(-1, ios::cur);
-                disco.write((char*)&uno, sizeof(char));
+        /* Escribiendo en el bitmap de inodos */
+        disk.seekg(sb.s_bm_inode_start);
+        while(!disk.eof()){
+            disk.read((char *)&aux, sizeof(char));
+            if(!disk.eof() && aux == cero){
+                disk.seekp(-1, ios::cur); // 1 antes del cero encontrado para escribir el 1
+                disk.write((char*)&uno, sizeof(char));
                 break;
             }
         }
 
-        cout << "--> Creando archivo /user.text ..." << endl;
-        //* Creacion de bloque carpeta para guardar el archivo inodo que viene
-        FolderBlock FB;
+        cout << "--> Creando archivo /users.txt..." << endl;
+        /* CREACIÓN DE BLOQUE CARPETA PARA GUARDAR EL INODO ARCHIVO QUE VIENE */
+        FolderBlock folderB;
         string users = "users.txt";
-        //* FB.b_content[0] -> .
-        memset(FB.b_content[0].b_name, 0, 12);
-        FB.b_content[0].b_name[0] = '.';
-        FB.b_content[0].b_inodo = sb.s_inode_start;
-        //* FB.b_content[1] -> ..
-        memset(FB.b_content[1].b_name, 0, 12);
-        FB.b_content[1].b_name[0] = '.';
-        FB.b_content[1].b_name[1] = '.';
-        FB.b_content[1].b_inodo = sb.s_inode_start;
-        //* FB.b_content[2] -> users.txt
-        memset(FB.b_content[2].b_name, 0, 12);
-        for (int j = 0; j < (int)users.length() && j < 12; j++){
-            FB.b_content[2].b_name[j] = users[j];
-        }
-        //* Ya se tomo en cuenta el inodo raiz
-        FB.b_content[2].b_inodo = sb.s_first_ino;
-        //* FB.b_content[3] --> vacio
-        memset(FB.b_content[3].b_name, 0, 12);
-        FB.b_content[3].b_inodo = -1;
+        // folderB.b_content[0] -> .
+        memset(folderB.b_content[0].b_name, 0, 12);
+        folderB.b_content[0].b_name[0] = '.';
+        folderB.b_content[0].b_inodo = sb.s_inode_start;
+        // folderB.b_content[1] -> ..
+        memset(folderB.b_content[1].b_name, 0, 12);
+        folderB.b_content[1].b_name[0] = '.';
+        folderB.b_content[1].b_name[1] = '.';
+        folderB.b_content[1].b_inodo = sb.s_inode_start;
+        // folderB.b_content[2] -> users.txt
+        memset(folderB.b_content[2].b_name, 0, 12);
+        for(int j = 0; j < (int)users.length() && j < 12; j++)
+            {folderB.b_content[2].b_name[j] = users[j];}
+        folderB.b_content[2].b_inodo = sb.s_first_ino; // ya se tomó en cuenta el inodo raíz
+        // folderB.b_content[3] -> vacío
+        memset(folderB.b_content[3].b_name, 0, 12);
+        folderB.b_content[3].b_inodo = -1;
 
-        //* Escribiendo el bloque carpeta
-        disco.seekp(sb.s_first_blo);
-        disco.write((char*)&FB, sizeof(FolderBlock));
+        /* Escribiendo el bloque carpeta */
+        disk.seekp(sb.s_first_blo);
+        disk.write((char*)&folderB, sizeof(FolderBlock));
         sb.s_first_blo += sb.s_block_s;
         sb.s_free_blocks_count -= 1;
-        //* Escribiendo en el bitmap de bloques
-        disco.seekg(sb.s_bm_block_start);
-        while(!disco.eof()){
-            disco.read((char*)&auxiliar, sizeof(char));
-            if(!disco.eof() && auxiliar == cero){
-                //* 1 antes del cero encontrado para escribir el 1
-                disco.seekp(-1, ios::cur);
-                disco.write((char*)&uno, sizeof(char));
+        /* Escribiendo en el bitmap de bloques */
+        disk.seekg(sb.s_bm_block_start);
+        while(!disk.eof()){
+            disk.read((char *)&aux, sizeof(char));
+            if(!disk.eof() && aux == cero){
+                disk.seekp(-1, ios::cur); // 1 antes del cero encontrado para escribir el 1
+                disk.write((char*)&uno, sizeof(char));
                 break;
             }
         }
 
-        //TODO--> Formato de users.txt
-        //* GID, Tipo, Grupo -> 1,1,MAX10
-        //* UID, Tipo, Grupo, Usuario, Contraseña -> 1,1,MAX10,MAX10
-        string contenidoUsuario = "1,G,root\n";
-        contenidoUsuario += "1,U,root,root,123\n";
+        /* FORMATO DE users.txt:
+        * GID, Tipo, Grupo -> 1,1,MAX10\n
+        * UID, Tipo, Grupo, Usuario, Contraseña -> 1,1,MAX10,MAX10\n
+        */
+        string usersContent = "1,G,root\n";
+        usersContent += "1,U,root,root,123\n";
 
-        //* Cálculo de bloques necesarios para escribir el archivo
-        float numeroBloques = (float)contenidoUsuario.length() / 64;
-        int bloquesArchivo = (int)numeroBloques;
-        if(numeroBloques > bloquesArchivo) bloquesArchivo += 1;
+        // Cálculo de bloques necesarios para escribir el archivo
+        float blocksNum = (float)usersContent.length() / 64;
+        int fileBlocks = (int)blocksNum;
+        if(blocksNum > fileBlocks)
+            fileBlocks += 1;
 
-        //* Creacion de inodo archivo /users.txt
-        Inode I;
-        //* id user: 1 -> root
-        I.i_uid = 1;
-        //* id group: 1 ->root
-        I.i_gid = 1;
-        I.i_s = (int)contenidoUsuario.length();
-        I.i_atime = NULL;
-        time(&I.i_ctime);
-        time(&I.i_mtime);
+        /* CREACIÓN DE INODO ARCHIVO /users.txt */
+        Inode usersInode;
+        usersInode.i_uid = 1; // id user: 1->root
+        usersInode.i_gid = 1; // id group: 1->root
+        usersInode.i_s = (int)usersContent.length();
+        usersInode.i_atime  = NULL;
+        time(&usersInode.i_ctime);
+        time(&usersInode.i_mtime);
         for(int i = 0; i < 15; i++){
-            if (i < bloquesArchivo) I.i_block[i] = sb.s_first_blo + (i)*sb.s_block_s;
-            else I.i_block[i] = -1;
+            if(i < fileBlocks)
+                usersInode.i_block[i] = sb.s_first_blo + (i)*sb.s_block_s;
+            else
+                usersInode.i_block[i] = -1;
         }
-        //* File
-        I.i_type = '1';
-        //* rwx rwx r--
-        I.i_perm = 774;
+        usersInode.i_type = '1'; // file
+        usersInode.i_perm = 774; //rwx rwx r--
 
-        //* Escribiendo el inodo archivo "/users.txt"
-        disco.seekp(sb.s_first_ino);
-        disco.write((char*)&I, sizeof(Inode));
+        /* Escribiendo el inodo archivo "/users.txt" */
+        disk.seekp(sb.s_first_ino);
+        disk.write((char*)&usersInode, sizeof(Inode));
         sb.s_first_ino += sb.s_inode_s;
         sb.s_free_inodes_count -= 1;
-
-        //* Escribiendo en el bitmap de inodos
-        disco.seekg(sb.s_bm_inode_start);
-        while(!disco.eof()){
-            disco.read((char*)&auxiliar, sizeof(char));
-            if(!disco.eof() && auxiliar == cero){
-                //* 1 antes del cero encontrado para escribir el 1
-                disco.seekp(-1, ios::cur);
-                disco.write((char*)&uno, sizeof(char));
+        /* Escribiendo en el bitmap de inodos */
+        disk.seekg(sb.s_bm_inode_start);
+        while(!disk.eof()){
+            disk.read((char *)&aux, sizeof(char));
+            if(!disk.eof() && aux == cero){
+                disk.seekp(-1, ios::cur); // 1 antes del cero encontrado para escribir el 1
+                disk.write((char*)&uno, sizeof(char));
                 break;
             }
         }
 
-        //* Creación de bloques archivo para el archivo /users.txt
+        /* CREACIÓN DE BLOQUES ARCHIVO PARA EL ARCHIVO /users.txt */
         FileBlock fileB;
         memset(fileB.b_content, 0, 64);
-        int contenidoMaximo = 0;
-        for(int i = 0; i < (int)contenidoUsuario.length(); i++){
-            fileB.b_content[contenidoMaximo] = contenidoUsuario[i];
-            contenidoMaximo += 1;
-            if(contenidoMaximo == 64){
-                //* Escribiendo el bloque carpeta para pasar al otro
-                disco.seekp(sb.s_first_blo);
-                disco.write((char*)&fileB, sizeof(FileBlock));
+        int maxContent = 0;
+        for(int i = 0; i < (int)usersContent.length(); i++){
+            fileB.b_content[maxContent] = usersContent[i];
+            maxContent += 1;
+            if(maxContent == 64){
+                /* Escribiendo el bloque carpeta para pasar al otro */
+                disk.seekp(sb.s_first_blo);
+                disk.write((char*)&fileB, sizeof(FileBlock));
                 sb.s_first_blo += sb.s_block_s;
                 sb.s_free_blocks_count -= 1;
-                //* Escribiendo en el bitmap de bloques
-                disco.seekg(sb.s_bm_block_start);
-                while(!disco.eof()){
-                    disco.read((char*)&auxiliar, sizeof(char));
-                    if(!disco.eof() && auxiliar == cero){
-                        // 1 antes del cero encontrado para escribir el 1
-                        disco.seekp(-1, ios::cur);
-                        disco.write((char*)&uno, sizeof(char));
+                /* Escribiendo en el bitmap de bloques */
+                disk.seekg(sb.s_bm_block_start);
+                while(!disk.eof()){
+                    disk.read((char *)&aux, sizeof(char));
+                    if(!disk.eof() && aux == cero){
+                        disk.seekp(-1, ios::cur); // 1 antes del cero encontrado para escribir el 1
+                        disk.write((char*)&uno, sizeof(char));
                         break;
                     }
                 }
-                //* Limpiando el content para volver a llenarlo
-                memset(fileB.b_content, 0, 64);
-                contenidoMaximo = 0;
+                memset(fileB.b_content, 0, 64); // limpiando el content para volver a llenarlo
+                maxContent = 0;
             }
-        }//* End for loop
-
-        if (contenidoMaximo > 0){
-            //* Escribiendo el ultimo bloque carpeta que no llego a ocupar los 64 bytes
-            disco.seekp(sb.s_first_blo);
-            disco.write((char*)&fileB, sizeof(FileBlock));
+        }
+        if(maxContent > 0){
+            /* Escribiendo el úlitmo bloque carpeta que no llegó a ocupar los 64 bytes */
+            disk.seekp(sb.s_first_blo);
+            disk.write((char*)&fileB, sizeof(FileBlock));
             sb.s_first_blo += sb.s_block_s;
             sb.s_free_blocks_count -= 1;
-            //* Escribiendo en el bitmap de bloques
-            disco.seekp(sb.s_bm_block_start);
-            while(!disco.eof()){
-                disco.read((char*)&auxiliar, sizeof(char));
-                if(!disco.eof() && auxiliar == cero){
-                    disco.seekp(-1, ios::cur);
-                    disco.write((char*)&uno, sizeof(char));
+            /* Escribiendo en el bitmap de bloques */
+            disk.seekg(sb.s_bm_block_start);
+            while(!disk.eof()){
+                disk.read((char *)&aux, sizeof(char));
+                if(!disk.eof() && aux == cero){
+                    disk.seekp(-1, ios::cur);
+                    disk.write((char*)&uno, sizeof(char));
                     break;
                 }
             }
         }
-        //* Escribiendo superbloque con la informacion actualizada
-        disco.seekp(particionInicial);
-        disco.write((char*)&sb, sizeof(Superblock));
 
-        //* Actualizando y escribiendo MBR
-        switch(numeroParticionPrimaria){
-            case 1: {
-                mb.mbr_partition_1.part_status = 'F'; break;
-            }
-            case 2: {
-                mb.mbr_partition_2.part_status = 'F'; break;
-            }
-            case 3: {
-                mb.mbr_partition_3.part_status = 'F'; break;
-            }
-            case 4: {
-                mb.mbr_partition_4.part_status = 'F'; break;
-            }
-            default: {
-                cout << "\033[0;91;49m[Error]: Se esperaba que la particion estuviera entre 1 y 4, vino: " <<
-                numeroParticionPrimaria << ". \033[0m" << endl;
-                disco.close();
-                return false;
-            }
+        /* Escribiendo superbloque con la información actualizada */
+        disk.seekp(partitionStart);
+        disk.write((char*)&sb, sizeof(Superblock));
+
+        /* Actualizando y escribiendo MBR */
+        switch(numberPrimaryPartition){
+            case 1: mbrDisk.mbr_partition_1.part_status = 'F'; break;
+            case 2: mbrDisk.mbr_partition_2.part_status = 'F'; break;
+            case 3: mbrDisk.mbr_partition_3.part_status = 'F'; break;
+            case 4: mbrDisk.mbr_partition_4.part_status = 'F'; break;
+            default: cout << "\033[0;91;49m[Error]:  se esperaba que la partición fuera 1-4, vino: "
+                     << numberPrimaryPartition << ".\033[0m" << endl;
+                     disk.close();
+                     return false;
         }
-        disco.seekp(1);
-        disco.write((char*)&mb, sizeof(MBR));
-        disco.close();
+        disk.seekp(1);
+        disk.write((char*)&mbrDisk, sizeof(MBR));
+
+        disk.close();
         return true;
-    }//* End if case
-    disco.close();
+    }
+    /* TODO else: MKFS LOGICAL PARITION */
+
+    disk.close();
     return false;
 }
-
 
 Mkfs _Mkfs(char* parametros){
     //* Variables de control
@@ -433,7 +414,7 @@ Mkfs _Mkfs(char* parametros){
                 else estado = -1;
                 break;
             }
-            //TODO--> PATH
+            //TODO--> Id
             //* Reconocimiento del caracter d
             case 2: {
                 parametroActual += parametros[i];
