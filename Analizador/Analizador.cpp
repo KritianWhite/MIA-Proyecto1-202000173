@@ -17,6 +17,8 @@
 #include "./../Comandos/Mkfs/Mkfs.cpp"
 #include "./../Comandos/Login/Login.cpp"
 #include "./../Comandos/Logout/Logout.cpp"
+#include "./../Comandos/Mkgrp/Mkgrp.cpp"
+#include "./../Comandos/Rmgrp/Rmgrp.cpp"
 
 using namespace std;
 
@@ -61,8 +63,11 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "mkfs") == 0){produccion = 2; cmmd = mkfs_command;}
             //* Comando login
             else if (strcasecmp(parte, "login") == 0){produccion = 2; cmmd = login_command;}
+            //* Comando mkgrp
+            else if (strcasecmp(parte, "mkgrp") == 0){produccion = 2; cmmd = mkgrp_command;}
             //* Comando logout
             else if (strcasecmp(parte, "logout") == 0){produccion = 2; cmmd = logout_command;}
+            else if (strcasecmp(parte, "rmgrp") == 0){produccion = 2; cmmd = rmgrp_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario]: " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -289,7 +294,30 @@ int Analizador(char *Comando, bool esScript){
                         incompleto = false;
                         break;
                     }
-                    
+                    case mkgrp_command: {
+                        Mkgrp mg;
+                        mg = _Mkgrp(parte);
+                        if(mg.acceso){
+                            estado = CrearGrupo(sesionAbierta, nombreUsuario, pariticionID, mg.groupName, listMountedPartitions);
+                            if(estado) cout << "\033[0;92;49m[Correcto]: Se ha creado el grupo " << mg.groupName
+                            << " en la particion " << pariticionID << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar crear el grupo " << mg.groupName << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case rmgrp_command: {
+                        Rmgrp rg;
+                        rg = _Rmgrp(parte);
+                        if(rg.acesso){
+                            estado = EliminarGrupo(sesionAbierta, nombreUsuario, pariticionID, rg.groupname, listMountedPartitions);
+                            if(estado) cout << "\033[0;92;49m[Correcto]: Se ha eliminado el grupo " << rg.groupname
+                            << " en la particion " << pariticionID << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar eliminar el grupo " << rg.groupname << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
                 }
             }
             catch (const exception& e)
