@@ -16,6 +16,7 @@
 #include "./../Comandos/Unmount/Unmount.cpp"
 #include "./../Comandos/Mkfs/Mkfs.cpp"
 #include "./../Comandos/Login/Login.cpp"
+#include "./../Comandos/Logout/Logout.cpp"
 
 using namespace std;
 
@@ -60,6 +61,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "mkfs") == 0){produccion = 2; cmmd = mkfs_command;}
             //* Comando login
             else if (strcasecmp(parte, "login") == 0){produccion = 2; cmmd = login_command;}
+            //* Comando logout
+            else if (strcasecmp(parte, "logout") == 0){produccion = 2; cmmd = logout_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario]: " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -277,6 +280,16 @@ int Analizador(char *Comando, bool esScript){
                         incompleto = false;
                         break;
                     }
+                    case logout_command: {
+                        if(LogoutUser(sesionAbierta)){
+                            sesionAbierta = false;
+                            nombreUsuario = "";
+                            pariticionID = "";
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    
                 }
             }
             catch (const exception& e)
@@ -299,5 +312,18 @@ int Analizador(char *Comando, bool esScript){
         
         parte = strtok(NULL, "");
     } //* End while
+
+    if(incompleto && produccion != 4){
+        if(cmmd == mount_command){
+            showMountedPartitions(listMountedPartitions);
+        }else if (cmmd == logout_command){
+            if(LogoutUser(sesionAbierta)){
+                sesionAbierta = false;
+                nombreUsuario = "";
+                pariticionID = "";
+            }
+        }else cout << "\033[0;91;49m[Error]: ingrese los parametros obligatorios del comando. \033[0m" << endl;
+    }
+
     return 0;
 }

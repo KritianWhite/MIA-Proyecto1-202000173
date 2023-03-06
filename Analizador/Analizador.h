@@ -22,7 +22,8 @@ enum commands {
     mount_command = 5,
     unmount_command = 6,
     mkfs_command = 7,
-    login_command = 8
+    login_command = 8,
+    logout_command = 9
 };
 
 
