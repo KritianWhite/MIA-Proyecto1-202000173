@@ -2,33 +2,39 @@
 #include <string.h>
 #include <fstream>
 
-#include "Login.h"
+#include "Mkusr.h"
 #include "../Estructura.h"
 #include "../../aux_funciones.h"
 #include "../Mount/Mount.h"
 
-
 using namespace std;
 
-bool LoginUser(bool openSesion, string partitionId, string username, string password, PartitionNode *&firstNode){
-    if(openSesion){
-        cout << "\033[0;91;49m[Error]: Ya se encuentra una sesión activa (use logout primero) \033[0m" << endl;
+
+bool createUser(bool openSesion, string userSesion, string newUser, string password, string groupName, string partitionId, PartitionNode *&firstNode){
+    /* VALIDACIONES */
+    if(!openSesion){
+        cout << "\033[0;91;49m> Error: no se encontró sesión activa\033[0m\n";
         return false;
     }
 
-    /* Verificando que el id represente una partición montada */
     if (!isIdInList(firstNode, partitionId)){
-        cout << "\033[0;91;49m[Error]: La particion con id " << partitionId << " no fue encontrada en la lista de particiones montadas (use mount para ver esta lista) \033[0m" << endl;
+        cout << "\033[0;91;49m> La particion con id " << partitionId << " no fue encontrada en la lista de particiones montadas (use mount para ver esta lista) \033[0m\n";
         return false;
     }
 
-    cout << "--> Obteniendo datos del disco..." << endl;
-    ifstream disk;
+    string rootuser = "root";
+    if(userSesion != rootuser){
+        cout << "\033[0;91;49m> Error: la sesión activa corresponde al usuario " << userSesion << ", mkusr necesita que el usuario sea root \033[0m\n";
+        return false;
+    }
+
+    cout << "> Obteniendo datos del disco...\n";
+    fstream disk;
     string diskPath = getDiskPath(firstNode, partitionId);
-    disk.open(diskPath, ios::in|ios::binary);
+    disk.open(diskPath, ios::in|ios::out|ios::binary);
     if(disk.fail()){
-        cout << "\033[0;91;49m[Error]: No se ha podido abrir el disco asociado a la partición " << partitionId <<
-        ", con ruta " << diskPath << ".\033[0m" << endl;
+        cout << "\033[0;91;49m> Error: No se ha podido abrir el disco asociado a la partición " << partitionId <<
+        ", con ruta " << diskPath << "\033[0m\n";
         disk.close();
         return false;
     }
@@ -36,7 +42,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
     char aux;
     disk.read((char *)&aux, sizeof(char));
     if(aux != idMBR){
-        cout << "\033[0;91;49m[Error]: No vino ch ar idMBR antes del MBR. Error interno.\033[0m" << endl;
+        cout << "> Error interno: no vino char idMBR antes del MBR\n";
         disk.close();
         return false;
     }
@@ -54,7 +60,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
         if(mbrDisk.mbr_partition_1.part_status != 'E'){
             if(mbrDisk.mbr_partition_1.part_name == partitionName){
                 if(mbrDisk.mbr_partition_1.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
                     disk.close();
                     return false;
                 }
@@ -68,7 +74,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
         if(mbrDisk.mbr_partition_2.part_status != 'E'){
             if(mbrDisk.mbr_partition_2.part_name == partitionName){
                 if(mbrDisk.mbr_partition_2.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
                     disk.close();
                     return false;
                 }
@@ -82,7 +88,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
         if(mbrDisk.mbr_partition_3.part_status != 'E'){
             if(mbrDisk.mbr_partition_3.part_name == partitionName){
                 if(mbrDisk.mbr_partition_3.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
                     disk.close();
                     return false;
                 }
@@ -96,7 +102,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
         if(mbrDisk.mbr_partition_4.part_status != 'E'){
             if(mbrDisk.mbr_partition_4.part_name == partitionName){
                 if(mbrDisk.mbr_partition_4.part_type == 'E'){
-                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas. \033[0m" << endl;
+                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
                     disk.close();
                     return false;
                 }
@@ -112,7 +118,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
 
     /* Validando que la partición contenga formato */
     if(partStatus != 'F'){
-        cout << "\033[0;91;49m[Error]:  La partición " << partitionId << " no ha sido formateada, utilice mkfs primero \033[0m" << endl;
+        cout << "\033[0;91;49m> Error: La partición " << partitionId << " no ha sido formateada, utilice mkfs primero \033[0m\n";
         disk.close();
         return false;
     }
@@ -133,6 +139,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
     Inode inodeAux;
     FolderBlock folderB;
     string name = "users.txt";
+    int inodeAuxPos = -1;
     bool wasFound = false;
     disk.seekg(sb.s_inode_start);
     disk.read((char*)&inodeAux, sizeof(Inode)); // Root inode
@@ -140,7 +147,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
     /* Buscando en bloques directos */
     for(int i = 0; i < 12; i++){
         if(inodeAux.i_block[i] == -1){
-            cout << "\033[0;91;49m[Error]: se llegó a un pointer = -1 en el inodo root sin encontrar el users.txt \033[0m" << endl;
+            cout << "> Error interno: se llegó a un pointer = -1 en el inodo root sin encontrar el users.txt\n";
             disk.close();
             return false;
         }
@@ -154,6 +161,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
             if(folderB.b_content[j].b_name != name) continue;
 
             /* Inodo de users.txt encontrado */
+            inodeAuxPos = folderB.b_content[j].b_inodo;
             disk.seekg(folderB.b_content[j].b_inodo);
             disk.read((char*)&inodeAux, sizeof(Inode));
             wasFound = true;
@@ -164,7 +172,7 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
 
     /* No se encontró en los bloques directos */
     if(!wasFound){
-        cout << "\033[0;91;49m[Error]: se leyeron todos los bloques directos sin encontrar users.txt \033[0m" << endl;
+        cout << "> Error interno: se leyeron todos los bloques directos sin encontrar users.txt\n";
         disk.close();
         return false;
     }
@@ -187,18 +195,15 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
         // TODO seguir leyendo bloques indirectos
     }
 
-    /* Buscando al usuario que inició sesión */
     char *line;
-    string linecopy = "", id = "", type = "", group = "", user = "", pass = "";
-    line = strtok((char*)content.c_str(), "\n");
+    int currentUserId = 0;
+    bool groupExists = false;
+    string contentcopy = content, linecopy = "", id = "", type = "", group = "", usr = "", pass = "";
+    line = strtok((char*)contentcopy.c_str(), "\n");
     while(line != NULL){
         linecopy = line;
-
-        /* FORMATO DE users.txt:
-        * GID, Tipo, Grupo -> 1,G,MAX10\n
-        * UID, Tipo, Grupo, Usuario, Contraseña -> 1,U,root,root,123\n
-        */
-
+        /* GID, Tipo, Grupo -> 1,G,MAX10\n */
+        /* UID, Tipo, Grupo, Usuario, Contraseña -> 1,U,root,root,123\n */
         size_t pos = 0;
         pos = linecopy.find(",");
         id = linecopy.substr(0, pos);
@@ -206,49 +211,125 @@ bool LoginUser(bool openSesion, string partitionId, string username, string pass
         pos = linecopy.find(",");
         type = linecopy.substr(0, pos);
         linecopy.erase(0, pos + 1);
+        pos = linecopy.find(",");
+        group = linecopy.substr(0, pos);
+        if(!groupExists && group == groupName){
+            if(id == "0"){
+                cout << "\033[0;91;49m> Error: El grupo " << group << " ha sido eliminado. \033[0m\n";
+                disk.close();
+                return false;
+            }
+            groupExists = true;
+        }
 
         if(type == "G"){
             line = strtok(NULL, "\n");
             continue;
         }
+        linecopy.erase(0, pos + 1);
 
         pos = linecopy.find(",");
-        group = linecopy.substr(0, pos);
-        linecopy.erase(0, pos + 1);
-        pos = linecopy.find(",");
-        user = linecopy.substr(0, pos);
+        usr = linecopy.substr(0, pos);
+        if(usr == newUser){
+            cout << "\033[0;91;49m> Error: El usuario " << usr << " ya existe en la partición \033[0m\n";
+            disk.close();
+            return false;
+        }
         linecopy.erase(0, pos + 1);
         pass = linecopy;
 
-        if(user == username && pass == password){
-            disk.close();
-            if(id != "0") return true;
-            cout << "\033[0;91;49m[Error]: El usuario " << user << " ha sido eliminado. \033[0m" << endl;
-            return false;
-        }
+        currentUserId += 1;
 
         line = strtok(NULL, "\n");
     }
 
+    if(!groupExists){
+        cout << "\033[0;91;49m> Error: El grupo " << groupName << " no ha sido creado en la partición \033[0m\n";
+        disk.close();
+        return false;
+    }
+
+    string newContent = to_string(currentUserId + 1);
+    newContent += ",U,";
+    newContent += groupName;
+    newContent += ",";
+    newContent += newUser;
+    newContent += ",";
+    newContent += password;
+    newContent += "\n";
+    bool wasWritten = false;
+    int k = 0, blockPos = -1;
+
+    /* Recorriendo bloques directos del inodo de users.txt */
+    for(int i = 0; i < 12; i++){
+        if(inodeAux.i_block[i] == -1){
+            // se llegó a un pointer vacío, por lo que requiere un nuevo bloque
+            // escribiendolo en el bitmap de bloques
+            disk.seekg(sb.s_bm_block_start);
+            while(!disk.eof()){
+                disk.read((char *)&aux, sizeof(char));
+                if(!disk.eof() && aux == cero){
+                    disk.seekp(-1, ios::cur); // 1 antes del cero encontrado para escribir el 1
+                    disk.write((char*)&uno, sizeof(char));
+                    break;
+                }
+            }
+            blockPos = sb.s_first_blo;
+            inodeAux.i_block[i] = blockPos;
+            sb.s_first_blo += sb.s_block_s;
+            sb.s_free_blocks_count -= 1;
+            memset(fileB.b_content, 0, 64);
+        }else{
+            // existe el bloque de archivos
+            blockPos = inodeAux.i_block[i];
+            disk.seekg(inodeAux.i_block[i]);
+            disk.read((char*)&fileB, sizeof(FileBlock));
+        }
+        // escribiendo el nuevo contenido
+        for(int j = 0; j < 64; j++){
+            if(fileB.b_content[j] != 0) continue;
+            fileB.b_content[j] = newContent[k];
+            wasWritten = true;
+            k++;
+            if(k >= (int)newContent.length()) break;
+        }
+        // escribiendo o sobrescribiendo el bloque con el contenido nuevo, según el caso
+        if(wasWritten){
+            disk.seekp(blockPos);
+            disk.write((char*)&fileB, sizeof(FileBlock));
+            time(&inodeAux.i_mtime);
+            if(k >= (int)newContent.length()) break;
+            /* Falta contenido por escribirse */
+            memset(fileB.b_content, 0, 64);
+            wasWritten = false;
+        }
+    }
+
+    /* Sobrescribiendo inodeAux (inodo users.txt) */
+    disk.seekp(inodeAuxPos);
+    disk.write((char*)&inodeAux, sizeof(Inode));
+    /* Sobrescribiendo superbloque */
+    disk.seekp(partitionStart);
+    disk.write((char*)&sb, sizeof(Superblock));
+
     disk.close();
-    return false;
+    return true;
 }
 
 
-Login _Login(char* parametros){
+Mkusr _Mkusr(char *parametros){
     //* Variables de control
-    string parametroActual = "";
-    string comentario = "";
     int estado = 0;
-    //* User
+    string parametroActual = "", comentario = "";
+    //* user
     string usuario = "";
-    bool vUser = false;
-    //* Paswword
+    bool vUsuario = false;
+    //* password
     string contrasena = "";
     bool vContrasena = false;
-    //* Particion id
-    string particionID = "";
-    bool vID = false;
+    //* group
+    string nombreGrupo = "";
+    bool vGrupo = false;
 
     for(int i = 0; i <= (int)strlen(parametros); i++){
         switch (estado){
@@ -268,7 +349,7 @@ Login _Login(char* parametros){
                 parametroActual += parametros[i];
                 if((char)tolower(parametros[i]) == 'u') estado = 2;
                 else if ((char)tolower(parametros[i]) == 'p') estado = 9;
-                else if ((char)tolower(parametros[i]) == 'i') estado = 20;
+                else if ((char)tolower(parametros[i]) == 'g') estado = 16;
                 else if(parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;
@@ -309,16 +390,16 @@ Login _Login(char* parametros){
             //* Reconocimento de comillas dobles
             case 6: {
                 parametroActual += parametros[i];
-                if(parametros[i] == '\"') {vUser = false; usuario = ""; estado = 7;}
+                if(parametros[i] == '\"') {vUsuario = false; usuario = ""; estado = 7;}
                 else if (parametros[i] == 9 || parametros[i] == 32);
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else {vUser = false; usuario = ""; usuario += parametros[i]; estado = 8;}
+                else {vUsuario = false; usuario = ""; usuario += parametros[i]; estado = 8;}
                 break;
             }
             case 7: {
                 parametroActual += parametros[i];
                 if(parametros[i] == '\"'){
-                    if(usuario.length() > 0) vUser = true;
+                    if(usuario.length() > 0) vUsuario = true;
                     else cout << "\033[0;91;49m[Error]: " << parametroActual << " no contiene un nombre de usuario. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
@@ -330,14 +411,14 @@ Login _Login(char* parametros){
             case 8: {
                 parametroActual += parametros[i];
                 if(parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    vUser = true;
+                    vUsuario = true;
                     parametroActual = "";
                     estado = 0;
                 }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else usuario += parametros[i];
                 break;
             }
-            //TODO--> Password
+            //TODO--> Pass
             //* Reconocimiento del caracter a
             case 9: {
                 parametroActual += parametros[i];
@@ -362,56 +443,24 @@ Login _Login(char* parametros){
                 else estado = -1;
                 break;
             }
-            //* Reconocimiento del caracter w
+            //* Reconocimiento del caracter =
             case 12: {
                 parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'w') estado = 13;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
-                break;
-            }
-            //* Reconocimiento del caracter o
-            case 13: {
-                parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'o') estado = 14;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
-                break;
-            }
-            //* Reconocimiento del caracter r
-            case 14: {
-                parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'r') estado = 15;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
-                break;
-            }
-            //* Reconocimiento del caracter d
-            case 15: {
-                parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'd') estado = 16;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
-                break;
-            }
-            //* Reconocimiento del caracter =
-            case 16: {
-                parametroActual += parametros[i];
-                if (parametros[i] == '=') estado = 17;
+                if (parametros[i] == '=') estado = 13;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;
             }
             //* Reconocimiento de comillas dobles
-            case 17: {
+            case 13: {
                 parametroActual += parametros[i];
-                if(parametros[i] == '\"'){vContrasena = false; contrasena = "", estado = 18;}
+                if(parametros[i] == '\"'){vContrasena = false; contrasena = "", estado = 14;}
                 else if (parametros[i] == 9 || parametros[i] == 32);
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else {vContrasena = false; contrasena = ""; contrasena += parametros[i]; estado = 19;}
+                else {vContrasena = false; contrasena = ""; contrasena += parametros[i]; estado = 15;}
                 break;
             }
-            case 18: {
+            case 14: {
                 parametroActual += parametros[i];
                 if(parametros[i] == '\"'){
                     if(contrasena.length() > 0) vContrasena = true;
@@ -423,7 +472,7 @@ Login _Login(char* parametros){
                 break;
             }
             //* Reconocimiento sin comillas dobles
-            case 19: {
+            case 15: {
                 parametroActual += parametros[i];
                 if(parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
                     if(contrasena.length() > 0) vContrasena = true;
@@ -434,60 +483,67 @@ Login _Login(char* parametros){
                 else contrasena += parametros[i];
                 break;
             }
-            //TODO--> Id
-            //* Reconocimiento del caracter d
-            case 20: {
+            //TODO--> GRP
+            //* Reconocimiendo del caracter r
+            case 16: {
                 parametroActual += parametros[i];
-                if((char)tolower(parametros[i]) == 'd') estado = 21;
+                if ((char)tolower(parametros[i]) == 'r') estado = 17;
+                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
+                else estado = -1;
+                break;
+            }
+            //* Reconocimiento del caracter p
+            case 17: {
+                parametroActual += parametros[i];
+                if ((char)tolower(parametros[i]) == 'p') estado = 18;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;
             }
             //* Reconocimiento del caracter =
-            case 21: {
+            case 18: {
                 parametroActual += parametros[i];
-                if(parametros[i] == '=') estado = 22;
+                if (parametros[i] == '=') estado = 19;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;
             }
             //* Reconocimiento de comillas dobles
-            case 22: {
+            case 19: {
                 parametroActual += parametros[i];
-                if(parametros[i] == '\"'){vID = false; particionID = ""; estado = 23;}
-                else if (parametros[i] == 9 || parametros[i] == 32) ;
+                if(parametros[i] == '\"'){vGrupo = false; nombreGrupo = "", estado = 20;}
+                else if (parametros[i] == 9 || parametros[i] == 32);
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else {vID = false; particionID = ""; particionID += parametros[i]; estado = 24;}
+                else {vGrupo = false; nombreGrupo = ""; nombreGrupo += parametros[i]; estado = 21;}
                 break;
             }
-            case 23: {
+            case 20: {
                 parametroActual += parametros[i];
                 if(parametros[i] == '\"'){
-                    if(particionID.length() > 0){
-                        vID = true;
-                    }else cout << "\033[;91;49m[Error]: \"" << parametroActual << "\" posee un id vació.\033[0m" << endl;
+                    if(nombreGrupo.length() > 0) vGrupo = true;
+                    else cout << "\033[0;91;49m[Error]: " << parametroActual << " no contiene una contraseña. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
-                }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else particionID += parametros[i];
+                }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado -2;}
+                else nombreGrupo += parametros[i];
                 break;
             }
             //* Reconocimiento sin comillas dobles
-            case 24: {
+            case 21: {
                 parametroActual += parametros[i];
                 if(parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    if(particionID.length() > 0) vID = true;
-                    else cout << "\033[;91;49m[Error]: \"" << parametroActual << "\" posee un id vació.\033[0m" << endl;
+                    if(nombreGrupo.length() > 0) vGrupo = true;
+                    else cout << "\033[0;91;49m[Error]: " << parametroActual << " no contiene una contraseña. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
-                }else if(parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else particionID += parametros[i];
+                }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
+                else nombreGrupo += parametros[i];
                 break;
             }
             //* Reconocimiento de error sintactico
             case -1: {
                 if (parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    cout << "\033[0;91;49m[Error]: El parametro \"" << parametroActual << "\" es inválido para login. \033[0m" << endl;
+                    cout << "\033[0;91;49m[Error]: El parametro \"" << parametroActual << "\" es inválido para mkgrp. \033[0m" << endl;
                     parametroActual = "";
                     estado = 0;
                 }
@@ -505,19 +561,19 @@ Login _Login(char* parametros){
     }//* End for loop
     if (comentario.length() > 0) cout << "\033[38;5;246m[Comentario]: " << comentario << "\033[0m" << endl;
 
-    Login lg;
-    if(vUser && vContrasena && vID){
-        lg.username = usuario;
-        lg.password = contrasena;
-        lg.partitionId = particionID;
-        lg.acceso = true;
-        return lg;
+    Mkusr mu;
+    if(vUsuario && vContrasena && vGrupo){
+        mu.username = usuario;
+        mu.password = contrasena;
+        mu.groupname = nombreGrupo;
+        mu.acceso = true;
+        return mu;
     }
 
-    if(!vUser) cout << "\033[;91;49m[Error]: Faltan el parametro obligatorio \">user\" para poder iniciar sesion.\033[0m" << endl;
-    if(!vContrasena) cout << "\033[;91;49m[Error]: Faltan el parametro obligatorio \">password\" para poder iniciar sesion.\033[0m" << endl;
-    if(!vID) cout << "\033[;91;49m[Error]: Faltan el parametro obligatorio \">id\" para poder iniciar sesion.\033[0m" << endl;
+    if(!vUsuario) cout << "\033[;91;49m[Error]: Faltan el parametro obligatorio \">user\" para poder crear el usuario.\033[0m" << endl;
+    if(!vContrasena) cout << "\033[;91;49m[Error]: Faltan el parametro obligatorio \">pass\" para poder crear el usuario.\033[0m" << endl;
+    if(!vGrupo) cout << "\033[;91;49m[Error]: Faltan el parametro obligatorio \">grp\" para poder crear el usuario.\033[0m" << endl;
 
-    lg.acceso = false;
-    return lg;
+    mu.acceso = false;
+    return mu;
 }
