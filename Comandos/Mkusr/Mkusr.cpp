@@ -13,28 +13,28 @@ using namespace std;
 bool createUser(bool openSesion, string userSesion, string newUser, string password, string groupName, string partitionId, PartitionNode *&firstNode){
     /* VALIDACIONES */
     if(!openSesion){
-        cout << "\033[0;91;49m> Error: no se encontró sesión activa\033[0m\n";
+        cout << "\033[0;91;49m[Error]: no se encontró sesión activa\033[0m" << endl;
         return false;
     }
 
     if (!isIdInList(firstNode, partitionId)){
-        cout << "\033[0;91;49m> La particion con id " << partitionId << " no fue encontrada en la lista de particiones montadas (use mount para ver esta lista) \033[0m\n";
+        cout << "\033[0;91;49m[Error]: La particion con id " << partitionId << " no fue encontrada en la lista de particiones montadas (use mount para ver esta lista) \033[0m" << endl;
         return false;
     }
 
     string rootuser = "root";
     if(userSesion != rootuser){
-        cout << "\033[0;91;49m> Error: la sesión activa corresponde al usuario " << userSesion << ", mkusr necesita que el usuario sea root \033[0m\n";
+        cout << "\033[0;91;49m[Error]: la sesión activa corresponde al usuario " << userSesion << ", mkusr necesita que el usuario sea root \033[0m" << endl;
         return false;
     }
 
-    cout << "> Obteniendo datos del disco...\n";
+    cout << "--> Obteniendo datos del disco..." << endl;
     fstream disk;
     string diskPath = getDiskPath(firstNode, partitionId);
     disk.open(diskPath, ios::in|ios::out|ios::binary);
     if(disk.fail()){
-        cout << "\033[0;91;49m> Error: No se ha podido abrir el disco asociado a la partición " << partitionId <<
-        ", con ruta " << diskPath << "\033[0m\n";
+        cout << "\033[0;91;49m[Error]: No se ha podido abrir el disco asociado a la partición " << partitionId <<
+        ", con ruta " << diskPath << "\033[0m" << endl;
         disk.close();
         return false;
     }
@@ -42,7 +42,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
     char aux;
     disk.read((char *)&aux, sizeof(char));
     if(aux != idMBR){
-        cout << "> Error interno: no vino char idMBR antes del MBR\n";
+        cout << "\033[0;91;49m[Error]: no vino char idMBR antes del MBR \033[0m" << endl;
         disk.close();
         return false;
     }
@@ -60,7 +60,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
         if(mbrDisk.mbr_partition_1.part_status != 'E'){
             if(mbrDisk.mbr_partition_1.part_name == partitionName){
                 if(mbrDisk.mbr_partition_1.part_type == 'E'){
-                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas \033[0m" << endl;
                     disk.close();
                     return false;
                 }
@@ -74,7 +74,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
         if(mbrDisk.mbr_partition_2.part_status != 'E'){
             if(mbrDisk.mbr_partition_2.part_name == partitionName){
                 if(mbrDisk.mbr_partition_2.part_type == 'E'){
-                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas \033[0m" << endl;
                     disk.close();
                     return false;
                 }
@@ -88,7 +88,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
         if(mbrDisk.mbr_partition_3.part_status != 'E'){
             if(mbrDisk.mbr_partition_3.part_name == partitionName){
                 if(mbrDisk.mbr_partition_3.part_type == 'E'){
-                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas \033[0m" << endl;
                     disk.close();
                     return false;
                 }
@@ -102,7 +102,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
         if(mbrDisk.mbr_partition_4.part_status != 'E'){
             if(mbrDisk.mbr_partition_4.part_name == partitionName){
                 if(mbrDisk.mbr_partition_4.part_type == 'E'){
-                    cout << "> Error interno: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas\n";
+                    cout << "\033[0;91;49m[Error]: La partición montada coincide con una extendida, solo pueden montarse primarias o extendidas \033[0m" << endl;
                     disk.close();
                     return false;
                 }
@@ -118,7 +118,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
 
     /* Validando que la partición contenga formato */
     if(partStatus != 'F'){
-        cout << "\033[0;91;49m> Error: La partición " << partitionId << " no ha sido formateada, utilice mkfs primero \033[0m\n";
+        cout << "\033[0;91;49m[Error]:  La partición " << partitionId << " no ha sido formateada, utilice mkfs primero \033[0m" << endl;
         disk.close();
         return false;
     }
@@ -147,7 +147,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
     /* Buscando en bloques directos */
     for(int i = 0; i < 12; i++){
         if(inodeAux.i_block[i] == -1){
-            cout << "> Error interno: se llegó a un pointer = -1 en el inodo root sin encontrar el users.txt\n";
+            cout << "\033[0;91;49m[Error]: se llegó a un pointer = -1 en el inodo root sin encontrar el users.txt \033[0m" << endl;
             disk.close();
             return false;
         }
@@ -172,7 +172,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
 
     /* No se encontró en los bloques directos */
     if(!wasFound){
-        cout << "> Error interno: se leyeron todos los bloques directos sin encontrar users.txt\n";
+        cout << "\033[0;91;49m[Error]: se leyeron todos los bloques directos sin encontrar users.txt \033[0m" << endl;
         disk.close();
         return false;
     }
@@ -215,7 +215,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
         group = linecopy.substr(0, pos);
         if(!groupExists && group == groupName){
             if(id == "0"){
-                cout << "\033[0;91;49m> Error: El grupo " << group << " ha sido eliminado. \033[0m\n";
+                cout << "\033[0;91;49m[Error]: El grupo " << group << " ha sido eliminado. \033[0m" << endl; 
                 disk.close();
                 return false;
             }
@@ -231,7 +231,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
         pos = linecopy.find(",");
         usr = linecopy.substr(0, pos);
         if(usr == newUser){
-            cout << "\033[0;91;49m> Error: El usuario " << usr << " ya existe en la partición \033[0m\n";
+            cout << "\033[0;91;49m[Error]: El usuario " << usr << " ya existe en la partición \033[0m" << endl;
             disk.close();
             return false;
         }
@@ -244,7 +244,7 @@ bool createUser(bool openSesion, string userSesion, string newUser, string passw
     }
 
     if(!groupExists){
-        cout << "\033[0;91;49m> Error: El grupo " << groupName << " no ha sido creado en la partición \033[0m\n";
+        cout << "\033[0;91;49m[Error]: El grupo " << groupName << " no ha sido creado en la partición \033[0m" << endl;
         disk.close();
         return false;
     }

@@ -20,7 +20,7 @@
 #include "./../Comandos/Mkgrp/Mkgrp.cpp"
 #include "./../Comandos/Rmgrp/Rmgrp.cpp"
 #include "./../Comandos/Mkusr/Mkusr.cpp"
-
+#include "./../Comandos/Rmusr/Rmusr.cpp"
 
 using namespace std;
 
@@ -73,6 +73,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "rmgrp") == 0){produccion = 2; cmmd = rmgrp_command;}
             //* Comando mkusr
             else if (strcasecmp(parte, "mkusr") == 0){produccion = 2; cmmd = mkusr_command;}
+            //* Comando rmusr
+            else if (strcasecmp(parte, "rmusr") == 0){produccion = 2; cmmd = rmusr_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario]: " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -331,6 +333,18 @@ int Analizador(char *Comando, bool esScript){
                             if(estado) cout << "\033[0;92;49m[Correcto]: Se ha creado el usuario " << mu.username << " del grupo " 
                             << mu.groupname << " en la particion " << pariticionID << " correctamente. \033[0m" << endl;
                             else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar crear el usuario " << mu.username << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case rmusr_command: {
+                        Rmusr ru;
+                        ru = _Rmusr(parte);
+                        if(ru.acceso){
+                            estado = EliminarUsuario(sesionAbierta, nombreUsuario, pariticionID, ru.username, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha eliminado el usuario " << ru.username 
+                            << " en la particion " << pariticionID << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar eliminar el usuario " << ru.username << ". \033[0m" << endl;
                         }
                         incompleto = false;
                         break;

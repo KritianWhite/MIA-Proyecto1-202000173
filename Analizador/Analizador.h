@@ -26,7 +26,8 @@ enum commands {
     logout_command = 9,
     mkgrp_command = 10,
     rmgrp_command = 11,
-    mkusr_command = 12
+    mkusr_command = 12,
+    rmusr_command = 13
 };
 
 
