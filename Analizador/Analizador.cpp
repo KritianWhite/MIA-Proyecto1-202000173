@@ -21,6 +21,8 @@
 #include "./../Comandos/Rmgrp/Rmgrp.cpp"
 #include "./../Comandos/Mkusr/Mkusr.cpp"
 #include "./../Comandos/Rmusr/Rmusr.cpp"
+#include "./../Comandos/Mkfile/Mkfile.cpp"
+#include "./../Comandos/Cat/Cat.cpp"
 
 using namespace std;
 
@@ -75,6 +77,10 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "mkusr") == 0){produccion = 2; cmmd = mkusr_command;}
             //* Comando rmusr
             else if (strcasecmp(parte, "rmusr") == 0){produccion = 2; cmmd = rmusr_command;}
+            //* Comando mkfile
+            else if (strcasecmp(parte, "mkfile") == 0){produccion = 2; cmmd = mkfile_command;}
+            //* Comando cat
+            else if (strcasecmp(parte, "cat") == 0){produccion = 2; cmmd = cat_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario]: " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -345,6 +351,31 @@ int Analizador(char *Comando, bool esScript){
                             if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha eliminado el usuario " << ru.username 
                             << " en la particion " << pariticionID << " correctamente. \033[0m" << endl;
                             else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar eliminar el usuario " << ru.username << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case mkfile_command: {
+                        Mkfile mf;
+                        mf = _Mkfile(parte);
+                        if(mf.acceso){
+                            estado = CrearArchivo(sesionAbierta, nombreUsuario, mf, pariticionID, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha creado el archivo con ruta " << mf.filePath
+                            << " en la particion " << pariticionID << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar crear el archivo en la ruta " << 
+                            mf.filePath << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case cat_command: {
+                        Cat cat;
+                        cat = _Cat(parte);
+                        if(cat.acceso){
+                            estado = MostrarContenido_Archivo(sesionAbierta, pariticionID, cat.filePathList, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha mostrado el contenido de " << cat.filePathList.size()
+                            << " archivos correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar mostrar los archivos. \033[0m" << endl;
                         }
                         incompleto = false;
                         break;

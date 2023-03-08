@@ -27,7 +27,9 @@ enum commands {
     mkgrp_command = 10,
     rmgrp_command = 11,
     mkusr_command = 12,
-    rmusr_command = 13
+    rmusr_command = 13,
+    mkfile_command = 14,
+    cat_command = 15
 };
 
 
