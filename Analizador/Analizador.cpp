@@ -23,6 +23,11 @@
 #include "./../Comandos/Rmusr/Rmusr.cpp"
 #include "./../Comandos/Mkfile/Mkfile.cpp"
 #include "./../Comandos/Cat/Cat.cpp"
+#include "./../Comandos/Rep/Rep.cpp"
+
+//* Reportes
+//#include "./../Comandos/Rep/Reportes/MbrReport.cpp"
+
 
 using namespace std;
 
@@ -81,6 +86,8 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "mkfile") == 0){produccion = 2; cmmd = mkfile_command;}
             //* Comando cat
             else if (strcasecmp(parte, "cat") == 0){produccion = 2; cmmd = cat_command;}
+            //* Comando rep
+            else if (strcasecmp(parte, "rep") == 0){produccion = 2; cmmd = rep_command;}
             //* Reconocimiento de comentarios.
             else if (parte[0] == '#'){cout << "\033[38;5;246m[comentario]: " << parte << "\033[0m" << endl; produccion = 4;}
 
@@ -376,6 +383,22 @@ int Analizador(char *Comando, bool esScript){
                             if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha mostrado el contenido de " << cat.filePathList.size()
                             << " archivos correctamente. \033[0m" << endl;
                             else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar mostrar los archivos. \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case rep_command: {
+                        Rep rp;
+                        rp = _Rep(parte);
+                        if(rp.acceso){
+                            //* Reporte MBR
+                            if(strcasecmp(rp.reportName.c_str(), "mbr") == 0)estado = Reporte_MBR(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "disk") == 0) estado = Reporte_Disk(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else cout << "\033[0;91;49m[Error]: No se reconoció el nombre del reporte " << rp.reportName << " en el comando rep \033[0m" << endl;
+
+                            if(estado) cout << "\033[0;92;49m[Correcto]: Se ha generado el reporte " << rp.reportName << " en " << rp.reportPath
+                            << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al generar el reporte " << rp.reportName << " en " << rp.reportPath << "\033[0m" << endl;
                         }
                         incompleto = false;
                         break;
