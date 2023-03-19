@@ -5,6 +5,14 @@
 #include "Rep.h"
 #include "./Reportes/MbrReport.cpp"
 #include "./Reportes/DiskReport.cpp"
+#include "./Reportes/InodeReport.cpp"
+#include "./Reportes/BlockReport.cpp"
+#include "./Reportes/Bm_InodeReport.cpp"
+#include "./Reportes/Bm_BlockReport.cpp"
+#include "./Reportes/TreeReport.cpp"
+#include "./Reportes/SbReport.cpp"
+#include "./Reportes/FileReport.cpp"
+#include "./Reportes/lsReport.cpp"
 
 using namespace std;
 

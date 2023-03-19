@@ -30,7 +30,12 @@ enum commands {
     rmusr_command = 13,
     mkfile_command = 14,
     cat_command = 15,
-    rep_command = 16
+    edit_command = 16,
+    rename_command = 17,
+    mkdir_command = 18,
+    find_command = 19,
+    chgrp_command = 20,
+    rep_command = 21
 };
 
 

@@ -871,7 +871,7 @@ Mkfile _Mkfile(char *parametros){
         mf.acceso = true;
         return mf;
     }
-    cout << "\033[0;91;49m[Error]: El parametro \">path\" es obligatorio para crear el archivo. \033[0m" << endl;
+    //if(!vPath) cout << "\033[0;91;49m[Error]: El parametro \">path\" es obligatorio para crear el archivo. \033[0m" << endl;
     mf.acceso = false;
     return mf;
 }

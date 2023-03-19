@@ -23,6 +23,12 @@
 #include "./../Comandos/Rmusr/Rmusr.cpp"
 #include "./../Comandos/Mkfile/Mkfile.cpp"
 #include "./../Comandos/Cat/Cat.cpp"
+#include "./../Comandos/Edit/Edit.cpp"
+#include "./../Comandos/Rename/Rename.cpp"
+#include "./../Comandos/Mkdir/Mkdir.cpp"
+#include "./../Comandos/Find/Find.cpp"
+#include "./../Comandos/Chgrp/Chgrp.cpp"
+
 #include "./../Comandos/Rep/Rep.cpp"
 
 //* Reportes
@@ -86,6 +92,16 @@ int Analizador(char *Comando, bool esScript){
             else if (strcasecmp(parte, "mkfile") == 0){produccion = 2; cmmd = mkfile_command;}
             //* Comando cat
             else if (strcasecmp(parte, "cat") == 0){produccion = 2; cmmd = cat_command;}
+            //* Comando edit
+            else if (strcasecmp(parte, "edit") == 0){produccion = 2; cmmd = edit_command;}
+            //* Comando rename
+            else if (strcasecmp(parte, "rename") == 0){produccion = 2; cmmd = rename_command;}
+            //* Comando mkdir
+            else if (strcasecmp(parte, "mkdir") == 0){produccion = 2; cmmd = mkdir_command;}
+            //* Comando Find
+            else if (strcasecmp(parte, "find") == 0){produccion = 2; cmmd = find_command;}
+            //* Comando Chgrp
+            else if (strcasecmp(parte, "chgrp") == 0){produccion = 2; cmmd = chgrp_command;}
             //* Comando rep
             else if (strcasecmp(parte, "rep") == 0){produccion = 2; cmmd = rep_command;}
             //* Reconocimiento de comentarios.
@@ -387,6 +403,66 @@ int Analizador(char *Comando, bool esScript){
                         incompleto = false;
                         break;
                     }
+                    case edit_command: {
+                        Edit e;
+                        e = _Edit(parte);
+                        if(e.acceso){
+                            estado = EditarArchivo(e.filePath, e.contentPath, sesionAbierta, nombreUsuario, pariticionID, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha editado el contenido del archivo " << e.filePath
+                            << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar editar el archivo " << e.filePath << ". \033[0m" << endl;
+                        }
+                        incompleto = false; 
+                        break;
+                    }
+                    case rename_command: {
+                        Rename re;
+                        re = _Rename(parte);
+                        if(re.acceso){
+                            estado = CambiarNombre_Archivo(sesionAbierta, pariticionID, re.path, re.oldName, re.newName, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha cambiado el nombre del archivo " << re.oldName
+                            << " a " << re.newName << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar cambiar el nombre del archivo " << re.oldName << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case mkdir_command: {
+                        Mkdir md;
+                        md = _Mkdir(parte);
+                        if(md.acceso){
+                            estado = CrearCarpeta(sesionAbierta, nombreUsuario, md.directoryPath, md.createParentFolderS, pariticionID, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha creado la carpeta " << md.directoryPath<< " en la particion " 
+                            << pariticionID << " correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar crear la carpeta " << md.directoryPath << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case find_command: {
+                        Find f;
+                        f = _Find(parte);
+                        if (f.acceso){
+                            estado = BuscarArchivos(sesionAbierta, pariticionID, f.originPath, f.regularExpression, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha mostrado los archivos encontrados que concuerdan con la expresion regular "<< f.regularExpression
+                            << " en la particion " << pariticionID <<" correctamente. \033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido un error al intentar mostrar los archivos. \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
+                    case chgrp_command: {
+                        Chgrp cg;
+                        cg = _Chgrp(parte);
+                        if(cg.acceso){
+                            estado = CambiarGrupo(sesionAbierta, nombreUsuario, pariticionID, cg.username, cg.newGroup, listMountedPartitions);
+                            if(estado)  cout << "\033[0;92;49m[Correcto]: Se ha cambiado el usuario " << cg.username << " al grupo " << 
+                            cg.newGroup << " correctamente.\033[0m" << endl;
+                            else cout << "\033[0;91;49m[Error]: Ha ocurrido al intentar cambiar de grupo al usuario " << cg.username << ". \033[0m" << endl;
+                        }
+                        incompleto = false;
+                        break;
+                    }
                     case rep_command: {
                         Rep rp;
                         rp = _Rep(parte);
@@ -394,6 +470,14 @@ int Analizador(char *Comando, bool esScript){
                             //* Reporte MBR
                             if(strcasecmp(rp.reportName.c_str(), "mbr") == 0)estado = Reporte_MBR(rp.partitionId, rp.reportPath, listMountedPartitions);
                             else if(strcasecmp(rp.reportName.c_str(), "disk") == 0) estado = Reporte_Disk(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "inode") == 0) estado = Reporte_inode(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "block") == 0) estado = Reporte_Bloque(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "bm_inode") == 0) estado = Reporte_bm_inode(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "bm_block") == 0) estado = Reporte_bm_block(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "tree") == 0) estado = Reporte_tree(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "sb") == 0) estado = Reporte_super_bloque(rp.partitionId, rp.reportPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "file") == 0) estado = Reporte_File(rp.partitionId, rp.reportPath, rp.directoryPath, listMountedPartitions);
+                            else if(strcasecmp(rp.reportName.c_str(), "ls") == 0) estado = Reporte_ls(rp.partitionId, rp.reportPath, rp.directoryPath, listMountedPartitions);
                             else cout << "\033[0;91;49m[Error]: No se reconoció el nombre del reporte " << rp.reportName << " en el comando rep \033[0m" << endl;
 
                             if(estado) cout << "\033[0;92;49m[Correcto]: Se ha generado el reporte " << rp.reportName << " en " << rp.reportPath
