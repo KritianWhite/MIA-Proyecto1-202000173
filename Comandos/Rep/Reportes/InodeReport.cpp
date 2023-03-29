@@ -131,8 +131,8 @@ bool Reporte_inode(string partitionId, string reportPath, PartitionNode *&firstN
         disco.read((char*)&iAux, sizeof(Inode));
         cadena += "\n\ta";
         cadena += to_string(i);
-        cadena += " [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" style=\"rounded\" bgcolor=\"lightblue\">";
-        cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"aquamarine3\"><B>Inodo ";
+        cadena += " [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" bgcolor=\"white\">";
+        cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"#4a6687\"><B>Inodo ";
         cadena += to_string(i+1);
         cadena += "</B></TD>\n\t\t\t</TR>";
         cadena += "\n\t\t\t<TR>\n\t\t\t<TD border=\"2\" bgcolor=\"white\">i_uid</TD>";

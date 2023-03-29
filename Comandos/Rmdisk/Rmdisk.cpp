@@ -50,110 +50,108 @@ Rmdisk _Rmdisk(char *parametros){
     //* Variables de control
     int estado = 0;
     string parametroActual = "", comentario = "";
-
-    string diskPath = "";
+    //* path
+    string path = "";
     bool vPath = false;
 
-    for (int i = 0; i <= (int)strlen(parametros); i++){
-        switch (estado){
-            //* Reconocimiento del caracter >
+    for(int i = 0; i <= (int)strlen(parametros); i++){
+        switch(estado){
             case 0: {
                 parametroActual += parametros[i];
                 if(parametros[i] == '>') estado = 1;
-                else if(parametros[i] == 9 || parametros[i] == 32);
-                else if(parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                else if(parametros[i] == 9 || parametros[i] == 32) ;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {estado = -1;}
                 break;
             }
-            //* Reconocimiento del caracter p
             case 1: {
                 parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'p') estado = 2;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                if((char)tolower(parametros[i]) == 'p') estado = 2;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {estado = -1;}
                 break;
             }
-            //* Reconocimiento del caracter a
             case 2: {
                 parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'a') estado = 3;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                if((char)tolower(parametros[i]) == 'a') estado = 3;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {estado = -1;}
                 break;
             }
-            //* Reconocimiento del caracter t
             case 3: {
                 parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 't') estado = 4;
-                else if (parametros[i] == '#'){comentario = "", comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                if((char)tolower(parametros[i]) == 't') estado = 4;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {estado = -1;}
                 break;
             }
-            //* Reconocimiento del caracter h
-            case 4:{
+            case 4: {
                 parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 'h') estado = 5;
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else estado = -1;
+                if((char)tolower(parametros[i]) == 'h') estado = 5;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {estado = -1;}
                 break;
             }
-            //* Reconocimiento del caracter =
             case 5: {
                 parametroActual += parametros[i];
-                if (parametros[i] == '=') estado = 6;
-                else if (parametros[i] == '#'){comentario = ""; comentario = parametros[i]; estado = -2;}
-                else estado = -1;
-                break;
-            }
-            //* Reconocimiento de la Path con comillas.
-            case 6: {
-                parametroActual += parametros[i];
-                if(parametros[i] == '\"'){vPath = false; diskPath = ""; estado = 7;}
-                else if (parametros[i] == 9 || parametros[i] == 32);
-                else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else {vPath = false; diskPath = ""; diskPath += parametros[i]; estado = 8;}
+                if(parametros[i] == '=') estado = 7;
+                else if(parametros[i] == 9 || parametros[i] == 32) ;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {estado = -1;}
                 break;
             }
             case 7: {
                 parametroActual += parametros[i];
-                if(parametros[i] == '\"') vPath = true;
-                else cout << "\033[0;91;49m[Error]: " << parametroActual << " posee una ruta vacia \033[0m" << endl;
-                parametroActual = "";
-                estado = 0;
+                if(parametros[i] == '\"') {vPath = false; path = ""; estado = 8;}
+                else if(parametros[i] == 9 || parametros[i] == 32) ;
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else {vPath = false; path = ""; path += parametros[i]; estado = 9;}
+                break;
             }
-            //* Reconocimiento de la path sin comillas
             case 8: {
+                parametroActual += parametros[i];
+                if(parametros[i] == '\"'){
+                    if(path.length() > 0) vPath = true;
+                    else {cout << "Error: " << parametroActual << " posee una ruta vacia \n";}
+                    parametroActual = "";
+                    estado = 0;
+                }
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else path += parametros[i];
+                break;
+            }
+            case 9: {
                 parametroActual += parametros[i];
                 if(parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
                     vPath = true;
                     parametroActual = "";
                     estado = 0;
-                }else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
-                else diskPath +=parametros[i];
+                }
+                else if(parametros[i] == '#') {comentario = ""; comentario += parametros[i]; estado = -2;}
+                else path += parametros[i];
                 break;
             }
-            //* Reconocimiento de errores de parametros
             case -1: {
                 if(parametros[i] == 0 || parametros[i] == 9 || parametros[i] == 32){
-                    cout << "\033[0;91;49m[Error]: El parametro \"" << parametroActual << "\" es invalido para el comando rmdisk \033[0m" << endl;
+                    cout << "Error: " << parametroActual << " es invalido para el comando rmdisk \n";
                     parametroActual = "";
                     estado = 0;
-                }else parametroActual += parametros[i];
+                }
+                else parametroActual += parametros[i];
                 break;
             }
-            //* Comentarios
             case -2: {
                 comentario += parametros[i];
                 break;
             }
-        }//* End switch case
-    }//* End For loop
+        } // end: switch
+    } // end: for char in parametros
     
     if(comentario.length() > 0) cout << "\033[38;5;246m[comentario] > " << comentario << "\033[0m" << endl;
 
     Rmdisk rm;
     if(vPath){
-        rm.path = diskPath;
+        rm.path = path;
         rm.acceso = true;
         return rm;
     }

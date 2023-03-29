@@ -47,13 +47,13 @@ bool CrearDisco(Mkdisk mk){
             // TODO --> Creamos el disco y todo.
             fstream nuevoDisco;
             string path = "";
-            int factor;
             cout << "--> Creando el disco..." << endl;
             path = mk.diskPath;
             path += mk.diskName;
             nuevoDisco.open(path, ios::out | ios::binary);
             if(nuevoDisco.fail()) return false;
 
+            int factor;
             if(mk.sizeUnit == 'K') factor = 1024;
             else factor = 1024*1024;
             for (int i = 0; i < (mk.diskSize*factor); i++){
@@ -68,7 +68,6 @@ bool CrearDisco(Mkdisk mk){
             nuevoMBR.mbr_dsk_signature = rand() % (100 + 1);
             nuevoMBR.dsk_fit = mk.diskFit;
 
-            //* Particiones vacias
             nuevoMBR.mbr_partition_1.part_status = 'E';
             nuevoMBR.mbr_partition_2.part_status = 'E';
             nuevoMBR.mbr_partition_3.part_status = 'E';
@@ -82,16 +81,12 @@ bool CrearDisco(Mkdisk mk){
 
             return true;
         }
-
+        cout << "\033[0;91;49m[Error]: Verifique permisos sudo para la creación del disco. \033[0m" << endl;
+        return false;
     }catch (...){
         return false;
     }
-
-
-
-
-
-    return false;
+    //return false;
 }
 
 Mkdisk _Mkdisk(char *parametros){

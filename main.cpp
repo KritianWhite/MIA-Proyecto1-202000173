@@ -11,6 +11,7 @@ bool Consola(){
     // ? --> Inicializamos cada elemento de comando con el valor cero
     // ?     y con el tamaño del mismo de 250 bytes.
     memset(comando, 0, 250);
+    cout << "[MIA]PROYECTO 1 - 202000173 | Christian Blanco " << endl;
     cout << "--> ";
     cin.getline(comando, 250, '\n');
     if (!cin) throw "\033[0;91;49m[Error]: Ah ocurrido un desbordamiento.\033[0m\n";

@@ -43,8 +43,8 @@ string Recursividad(ifstream &disco, Inode &actualInode, int posActualInode, cha
         cadena += ": ";
         cadena += to_string(actualInode.i_block[i]);
     }
-    if(actualInode.i_type == '0') cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"white:lightblue\"\n\t];\n\t";
-    else cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"white:greenyellow\"\n\t];\n\t";
+    if(actualInode.i_type == '0') cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"lightblue\"\n\t];\n\t";
+    else cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"greenyellow\"\n\t];\n\t";
     nodeCounter++;
 
     FolderBlock folderBlock_aux;
@@ -74,7 +74,7 @@ string Recursividad(ifstream &disco, Inode &actualInode, int posActualInode, cha
                     cadena += folderBlock_aux.b_content[j].b_name;
                 }
             }
-            cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"lightblue:blue\"\n\t];\n\t";
+            cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"#4a668\"\n\t];\n\t";
             cadena += "\"node";
             cadena += to_string(num_inode);
             cadena += "\":f";
@@ -112,7 +112,7 @@ string Recursividad(ifstream &disco, Inode &actualInode, int posActualInode, cha
                 if(fileBlock_aux.b_content[j] == '\n') cadena += "\\n";
                 else cadena += fileBlock_aux.b_content[j];
             }
-            cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"greenyellow:green4\"\n\t];\n\t";
+            cadena += "\"\n\t\tshape = \"record\"\n\t\tfillcolor = \"#3ca681\"\n\t];\n\t";
 
             cadena += "\"node";
             cadena += to_string(num_inode);

@@ -396,14 +396,14 @@ bool Reporte_ls(string partitionId, string reportPath, string filePath, Partitio
     //* Inodo del archivo "fileName" se encuentra en inodeAux 
 
     string cadena = "digraph G {\n\tnode [shape=box fontname=\"Helvetica,Arial,sans-serif\" peripheries=0]\n\tlabel = \"LS Report\"";
-    cadena += "\n\ta0 [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" style=\"rounded\" bgcolor=\"grey\">";
-    cadena += "\n\t\t<TR>\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Permisos</B></TD>";
-    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Owner</B></TD>";
-    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Grupo</B></TD>";
-    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Size (bytes)</B></TD>";
-    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Fecha</B></TD>";
-    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Tipo</B></TD>";
-    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"aquamarine1\"><B>Nombre</B></TD>\n\t\t</TR>";
+    cadena += "\n\ta0 [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\">";
+    cadena += "\n\t\t<TR>\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Permisos</B></TD>";
+    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Owner</B></TD>";
+    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Grupo</B></TD>";
+    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Size (bytes)</B></TD>";
+    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Fecha</B></TD>";
+    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Tipo</B></TD>";
+    cadena += "\n\t\t<TD border=\"2\"  bgcolor=\"#4a6687\"><B>Nombre</B></TD>\n\t\t</TR>";
 
     string usersContent = getUsersContent(disco, sbAux);
     cadena += recursivePerm(disco, inodeAux, posActualInode, nameActualInode, usersContent);

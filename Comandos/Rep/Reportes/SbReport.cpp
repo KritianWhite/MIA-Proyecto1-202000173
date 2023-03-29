@@ -122,8 +122,8 @@ bool Reporte_super_bloque(string partitionId, string reportPath, PartitionNode *
 
     try{
         string cadena = "digraph G {\n\tnode [fontname=\"Helvetica,Arial,sans-serif\" peripheries=0]";
-        cadena += "\n\ta0 [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" style=\"rounded\" bgcolor=\"grey\">";
-        cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"lightblue\"><B>SUPERBLOQUE</B></TD>\n\t\t\t</TR>";
+        cadena += "\n\ta0 [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\">";
+        cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"#4a6687\"><B>SUPERBLOQUE</B></TD>\n\t\t\t</TR>";
 
         cadena += "\n\t\t\t<TR>\n\t\t\t<TD border=\"2\" bgcolor=\"white\">s_filesystem_type</TD>";
         cadena += "\n\t\t\t<TD border=\"2\"  bgcolor=\"white\">ext";

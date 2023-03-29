@@ -357,7 +357,7 @@ Login _Login(char* parametros){
             //* Reconocimiento del caracter s
             case 11: {
                 parametroActual += parametros[i];
-                if ((char)tolower(parametros[i]) == 's') estado = 12;
+                if ((char)tolower(parametros[i]) == 's') estado = 16;
                 else if (parametros[i] == '#'){comentario = ""; comentario += parametros[i]; estado = -2;}
                 else estado = -1;
                 break;

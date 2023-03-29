@@ -142,8 +142,8 @@ bool Reporte_Bloque(string partitionId, string reportPath, PartitionNode *&first
             disco.read((char*)&fileB, sizeof(FileBlock));
             cadena += "\n\ta";
             cadena += to_string(i);
-            cadena += " [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" style=\"rounded\" bgcolor=\"lightblue\">";
-            cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"chocolate2\"><B>Bloque archivo ";
+            cadena += " [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" bgcolor=\"white\">";
+            cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"#3ca681\"><B>Bloque archivo ";
             cadena += to_string(i+1);
             cadena += "</B></TD>\n\t\t\t</TR>";
             cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\" bgcolor=\"white\">content</TD>\n\t\t\t</TR>";
@@ -154,8 +154,8 @@ bool Reporte_Bloque(string partitionId, string reportPath, PartitionNode *&first
             //* FOLDERBLOCK 
             cadena += "\n\ta";
             cadena += to_string(i);
-            cadena += " [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\" style=\"rounded\" bgcolor=\"lightblue\">";
-            cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"chocolate4\"><B>Bloque carpeta ";
+            cadena += " [label=<\n\t\t<TABLE border=\"3\" cellspacing=\"5\" cellpadding=\"10\">";
+            cadena += "\n\t\t\t<TR>\n\t\t\t<TD colspan=\"2\" border=\"2\"  bgcolor=\"#4a6687\"><B>Bloque carpeta ";
             cadena += to_string(i+1);
             cadena += "</B></TD>\n\t\t\t</TR>";
             for(int j = 0; j < 4; j++){
